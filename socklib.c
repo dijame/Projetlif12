@@ -436,21 +436,41 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 
         // En cas de redirection on recupère l'url
         if(code == 302) {
-            while(strncmp(tmp,"Location:",9) == 0) {
+            while(strncmp(tmp,"Location:",9) != 0) {
                 tmp = RecoieLigne(sockfd);
             }
             // On récupère l'adresse sans le http://
-            char* url = tmp + 17;
-            // On récupère le serveur
-            char* new_serveur = strtok(url,"/");
-            // On s'occupe du chemin
-            char* new_chemin = strtok(NULL,"");
+            if(strncmp(tmp,"http://",7) == 0){
+                char* url = tmp + 17;
+                // On récupère le serveur
+                tmp = strtok(url,"/");
+                char* new_serveur = tmp;
+                // On s'occupe du chemin
+                tmp = strtok(NULL,"");
+                char* new_chemin  = tmp;
 
-            // On ferme la socket et le fichier pour pouvoir les récréer
+                // On relance la fonction de base
+                http_get(new_serveur,port,new_chemin,nom_fichier);
+
+            } else {
+                // On récupère le chemin sans la page (ex:"test.php" on le supprime)
+                char* lastslash  = strrchr(chemin,'/');
+                if(lastslash != NULL) *lastslash = '\0';
+                printf("\%s\n",chemin);
+                tmp = tmp + 11; // On enlève le "./"
+                char* new_chemin  = malloc(sizeof(char)*(strlen(tmp)+strlen(chemin)));
+                strcpy(new_chemin,chemin);
+                strcat(new_chemin,tmp);
+
+                printf("\%s\n",new_chemin);
+
+                // On relance la fonction de base
+                http_get(serveur,port,new_chemin,nom_fichier);
+                free(new_chemin);
+            }
+
             close(sockfd);
             close(outfd);
-            // On relance la fonction de base
-            http_get(new_serveur,port,new_chemin,nom_fichier);
             // Enfin on sort de la fontion
             exit(0);
         }
