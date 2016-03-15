@@ -27,19 +27,8 @@ int main(int argc, char** argv){
         // On récupère le serveur
         serveur = strtok(tmp,"/");
         // On s'occupe du chemin
-        if(tmp != NULL) chemin = malloc((strlen(tmp) + 1) * sizeof(char));
-        while(tmp != NULL) {
-            tmp = strtok(NULL,"/");
-            if(tmp != NULL){
-                chemin = realloc(chemin,(strlen(tmp)+1) * sizeof(char));
-                strcat(chemin,tmp);
-                strcat(chemin,"/");
-            }
-        }
-        // On supprime le "/" de fin
-        if(chemin != "") {
-            chemin[strlen(chemin)-1] = ' ';
-        }
+        chemin = strtok(NULL,"");
+
         // On sépare le port du serveur
         serveur = strtok(serveur,":");
         port = strtok(NULL,":");
@@ -51,7 +40,6 @@ int main(int argc, char** argv){
         printf("//Récupération de la page\\\n");
 
         http_get(serveur,port,chemin,argv[2]);
-        free(chemin);
     } else
         perror("Veuillez entrer le bon nombre d'arguments, l'url puis le nom du fichier ! ");
 

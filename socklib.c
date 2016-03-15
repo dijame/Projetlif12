@@ -397,7 +397,7 @@ int TestLecture(int s) {
   return res;
 }
 
-void http_get(const char * serveur, const char * port, const char * chemin, const char * nom_fichier)
+void http_get(const char* serveur, const char* port, const char* chemin, const char* nom_fichier)
 {
     // Créer un fichier s'il n'existe pas et donne les droits de lecture, écriture
 	// et exécution au propriétare du fichier
@@ -421,31 +421,38 @@ void http_get(const char * serveur, const char * port, const char * chemin, cons
         strcpy(tmp,header); // On sauvegarde la première ligne de l'en-tête
         header = strtok(header," "); // On découpe la chaine en délimitant pas des espaces
         header = strtok(NULL," "); // On récupère la deuxième partie soit le code
+        free(tmp); // On libère tmp
 
         // On cast le code en int
         int code = atoi(header);
         // On réchupère le message erreur
-        char* messerr;
-        if(header != NULL) messerr = malloc(strlen(header) * sizeof(char));
-        while(header != NULL) {
-            header = strtok(NULL," ");
-            if(header != NULL){
-                messerr = realloc(messerr,strlen(header) * sizeof(char));
-                strcat(messerr,header);
-            }
-        }
+        char* messerr = strtok(NULL,"");
+
         // On gère les erreurs ou réussites, ici on ne tiens pas compte précisement de tous les cas possibles
-        else if(code >= 200 && code < 400)
+        if(code >= 200 && code < 400)
             printf("\n%d , %s\n",code,messerr);
         else if(code >= 400 && code < 600)
             printf("\nErreur %d , %s\n",code,messerr);
-        free(messerr); // On libère la variable
+
         // En cas de redirection on recupère l'url
         if(code == 302) {
             while(strncmp(tmp,"Location:",9) == 0) {
                 tmp = RecoieLigne(sockfd);
             }
-            char* url = tmp + 17; // On récupère l'adresse sans le http://
+            // On récupère l'adresse sans le http://
+            char* url = tmp + 17;
+            // On récupère le serveur
+            char* new_serveur = strtok(url,"/");
+            // On s'occupe du chemin
+            char* new_chemin = strtok(NULL,"");
+
+            // On ferme la socket et le fichier pour pouvoir les récréer
+            close(sockfd);
+            close(outfd);
+            // On relance la fonction de base
+            http_get(new_serveur,port,new_chemin,nom_fichier);
+            // Enfin on sort de la fontion
+            exit(0);
         }
 
 
@@ -466,5 +473,5 @@ void http_get(const char * serveur, const char * port, const char * chemin, cons
         // On ferme la socket
         close(sockfd);
     }
-
+    close(outfd);
 }
