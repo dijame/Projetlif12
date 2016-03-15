@@ -37,14 +37,14 @@ typedef struct _DescPage{
 }DescPage;
 
 typedef struct _PageDownload{
-	char identifiant[TAILLE_TAB][TAILLE_TAB]; // Tableau bi-dimensionnel, contenant l'identifiant de la page & l'url a telechargé
+	char identifiant[TAILLE_TAB]; // Tableau bi-dimensionnel, contenant l'identifiant de la page & l'url a telechargé
 	struct _PageDownload *suivant;	
 	// Pour remplir cette structure, il faut ajouter chaque descPage ou t_download est à false
 	
 }PageDownload;
 
 typedef struct _PageAnalyze{
-	char identifiant[TAILLE_TAB][TAILLE_TAB]; // Tableau bi dimensionnel, contenant l'identifiant des oages tekecgargé mais pas traités
+	char identifiant[TAILLE_TAB]; // Tableau bi dimensionnel, contenant l'identifiant des oages tekecgargé mais pas traités
 	struct _PageAnalyze *suivant;	
 	// Pour remplir cette structure, il faut ajouter chaque descPage où t_download à true && t_analyze à false
 }PageAnalyze;
