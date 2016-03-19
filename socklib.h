@@ -5,7 +5,7 @@
 //#include <error.h>
 #include <string.h>
 #include <stdio.h>
-#include <stdbool.h> 
+#include <stdbool.h>
 
 /* Une partie n√©cessaire pour utiliser les sockets sous linux et windows */
 #if defined (WIN32)
@@ -74,12 +74,3 @@ int EnvoieMessage(int s, char* format, ...);
  *         * 1 s'il y a qqchose ‡ lire
  */
 int TestLecture(int s);
-/**
- * Fonction qui se connecte au serveur, telecharge la page http://serveur:port/chemin et sauvegarde dans nom_fichier
- * @param serveur
- * @param port
- * @param chemin
- * @param nom_fichier
- */
-//void http_get(const char * serveur, const char * port, const char * chemin, const char * nom_fichier);
-void http_get(const char * serveur, const char * port, const char * chemin, const char * nom_fichier);

@@ -1,72 +1,168 @@
-Date: Tue, 15 Mar 2016 12:15:40 GMT
-Server: Apache
-X-Powered-By: PHP/5.4.41-1~dotdeb+7.1
-Vary: Accept-Encoding
-Content-Type: text/html; charset=UTF-8
-X-Pad: avoid browser bug
+Date: Sat, 19 Mar 2016 17:25:14 GMT
+Server: Apache/2.4.7 (Ubuntu)
+X-Powered-By: PHP/5.5.9-1ubuntu4.14
+X-Drupal-Cache: MISS
+Expires: Sun, 19 Nov 1978 05:00:00 GMT
+Cache-Control: public, max-age=86400
+X-Content-Type-Options: nosniff
+Content-Language: en
+X-UA-Compatible: IE=edge,chrome=1
+X-Generator: Drupal 7 (http://drupal.org)
+Etag: "1458408314-0"
+Last-Modified: Sat, 19 Mar 2016 17:25:14 GMT
+Vary: Cookie
 Transfer-Encoding: chunked
+Content-Type: text/html; charset=utf-8
 
-1067
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml"><head>
-<style type="text/css">
-body {background-color: #ffffff; color: #000000;}
-body, td, th, h1, h2 {font-family: sans-serif;}
-pre {margin: 0px; font-family: monospace;}
-a:link {color: #000099; text-decoration: none; background-color: #ffffff;}
-a:hover {text-decoration: underline;}
-table {border-collapse: collapse;}
-.center {text-align: center;}
-.center table { margin-left: auto; margin-right: auto; text-align: left;}
-.center th { text-align: center !important; }
-td, th { border: 1px solid #000000; font-size: 75%; vertical-align: baseline;}
-h1 {font-size: 150%;}
-h2 {font-size: 125%;}
-.p {text-align: left;}
-.e {background-color: #ccccff; font-weight: bold; color: #000000;}
-.h {background-color: #9999cc; font-weight: bold; color: #000000;}
-.v {background-color: #cccccc; color: #000000;}
-.vr {background-color: #cccccc; text-align: right; color: #000000;}
-img {float: right; border: 0px;}
-hr {width: 600px; background-color: #cccccc; border: 0px; height: 1px; color: #000000;}
-</style>
-<title>phpinfo()</title><meta name="ROBOTS" content="NOINDEX,NOFOLLOW,NOARCHIVE" /></head>
-<body><div class="center">
-<h2>PHP Variables</h2>
-<table border="0" cellpadding="3" width="600">
-<tr class="h"><th>Variable</th><th>Value</th></tr>
-<tr><td class="e">_SERVER["PHP_FCGI_MAX_REQUESTS"]</td><td class="v">5000</td></tr>
-<tr><td class="e">_SERVER["PHP_DOCUMENT_ROOT"]</td><td class="v">/var/www/clients/client312/web208</td></tr>
-<tr><td class="e">_SERVER["PATH"]</td><td class="v">/usr/local/bin:/usr/bin:/bin</td></tr>
-<tr><td class="e">_SERVER["PHPRC"]</td><td class="v">/etc/php5/cgi/</td></tr>
-<tr><td class="e">_SERVER["PWD"]</td><td class="v">/var/www/php-fcgi-scripts/web208</td></tr>
-<tr><td class="e">_SERVER["CONTENT_LENGTH"]</td><td class="v">0</td></tr>
-<tr><td class="e">_SERVER["SCRIPT_NAME"]</td><td class="v">/Lif12/rep/test.php</td></tr>
-<tr><td class="e">_SERVER["REQUEST_URI"]</td><td class="v">/Lif12/rep/test.php</td></tr>
-<tr><td class="e">_SERVER["QUERY_STRING"]</td><td class="v"><i>no value</i></td></tr>
-<tr><td class="e">_SERVER["REQUEST_METHOD"]</td><td class="v">GET</td></tr>
-<tr><td class="e">_SERVER["SERVER_PROTOCOL"]</td><td class="v">HTTP/1.1</td></tr>
-<tr><td class="e">_SERVER["GATEWAY_INTERFACE"]</td><td class="v">CGI/1.1</td></tr>
-<tr><td class="e">_SERVER["REMOTE_PORT"]</td><td class="v">54223</td></tr>
-<tr><td class="e">_SERVER["SCRIPT_FILENAME"]</td><td class="v">/var/www/fabien.rico.perso.univ-lyon1.fr/web/Lif12/rep/test.php</td></tr>
-<tr><td class="e">_SERVER["SERVER_ADMIN"]</td><td class="v">webmaster@fabien.rico.perso.univ-lyon1.fr</td></tr>
-<tr><td class="e">_SERVER["DOCUMENT_ROOT"]</td><td class="v">/var/www/fabien.rico.perso.univ-lyon1.fr/web</td></tr>
-<tr><td class="e">_SERVER["REMOTE_ADDR"]</td><td class="v">134.214.126.21</td></tr>
-<tr><td class="e">_SERVER["SERVER_PORT"]</td><td class="v">80</td></tr>
-<tr><td class="e">_SERVER["SERVER_ADDR"]</td><td class="v">134.214.126.21</td></tr>
-<tr><td class="e">_SERVER["SERVER_NAME"]</td><td class="v">fabien.rico.perso.univ-lyon1.fr</td></tr>
-<tr><td class="e">_SERVER["SERVER_SOFTWARE"]</td><td class="v">Apache</td></tr>
-<tr><td class="e">_SERVER["SERVER_SIGNATURE"]</td><td class="v"><i>no value</i></td></tr>
-<tr><td class="e">_SERVER["HTTP_CONNECTION"]</td><td class="v">close</td></tr>
-<tr><td class="e">_SERVER["HTTP_X_FORWARDED_SERVER"]</td><td class="v">perso.univ-lyon1.fr</td></tr>
-<tr><td class="e">_SERVER["HTTP_X_FORWARDED_HOST"]</td><td class="v">perso.univ-lyon1.fr</td></tr>
-<tr><td class="e">_SERVER["HTTP_X_FORWARDED_FOR"]</td><td class="v">134.214.226.63</td></tr>
-<tr><td class="e">_SERVER["HTTP_HOST"]</td><td class="v">fabien.rico.perso.univ-lyon1.fr</td></tr>
-<tr><td class="e">_SERVER["FCGI_ROLE"]</td><td class="v">RESPONDER</td></tr>
-<tr><td class="e">_SERVER["PHP_SELF"]</td><td class="v">/Lif12/rep/test.php</td></tr>
-<tr><td class="e">_SERVER["REQUEST_TIME_FLOAT"]</td><td class="v">1458044140.262</td></tr>
-<tr><td class="e">_SERVER["REQUEST_TIME"]</td><td class="v">1458044140</td></tr>
-</table><br />
-</div></body></html>
+24b3
+<!DOCTYPE html>
+<!--[if IEMobile 7]><html class="iem7"  lang="en" dir="ltr"><![endif]-->
+<!--[if lte IE 6]><html class="lt-ie9 lt-ie8 lt-ie7"  lang="en" dir="ltr"><![endif]-->
+<!--[if (IE 7)&(!IEMobile)]><html class="lt-ie9 lt-ie8"  lang="en" dir="ltr"><![endif]-->
+<!--[if IE 8]><html class="lt-ie9"  lang="en" dir="ltr"><![endif]-->
+<!--[if (gte IE 9)|(gt IEMobile 7)]><!--><html  lang="en" dir="ltr" prefix="content: http://purl.org/rss/1.0/modules/content/ dc: http://purl.org/dc/terms/ foaf: http://xmlns.com/foaf/0.1/ og: http://ogp.me/ns# rdfs: http://www.w3.org/2000/01/rdf-schema# sioc: http://rdfs.org/sioc/ns# sioct: http://rdfs.org/sioc/types# skos: http://www.w3.org/2004/02/skos/core# xsd: http://www.w3.org/2001/XMLSchema#"><!--<![endif]-->
+
+<head>
+  <meta charset="utf-8" />
+<meta name="Generator" content="Drupal 7 (http://drupal.org)" />
+  <title>Page not found | Hooper</title>
+
+      <meta name="MobileOptimized" content="width">
+    <meta name="HandheldFriendly" content="true">
+    <meta name="viewport" content="width=device-width">
+    <meta http-equiv="cleartype" content="on">
+
+  <link type="text/css" rel="stylesheet" href="http://hooper.com/sites/hooper/files/css/css_lQaZfjVpwP_oGNqdtWCSpJT1EMqXdMiU84ekLLxQnc4.css" media="all" />
+<link type="text/css" rel="stylesheet" href="http://hooper.com/sites/hooper/files/css/css_TsVRTbLFUpEZAfw-_bWPJu840QT523CPjUVJ5MRWfyk.css" media="all" />
+<link type="text/css" rel="stylesheet" href="http://hooper.com/sites/hooper/files/css/css_g_UneL04I_By-JV5ryZJJWsDW1p5XeBj7jW6RhipZ48.css" media="all" />
+<link type="text/css" rel="stylesheet" href="http://hooper.com/sites/hooper/files/css/css_dNsKn7Z-6ouECTNgRrBIAZi7llA-NSo5MLyyI6kpMJA.css" media="all" />
+<link type="text/css" rel="stylesheet" href="http://hooper.com/sites/hooper/files/css/css_47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU.css" media="all" />
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+<script>window.jQuery || document.write("<script src='/sites/all/modules/jquery_update/replace/jquery/1.8/jquery.min.js'>\x3C/script>")</script>
+<script src="http://hooper.com/sites/hooper/files/js/js_3TykeRWpejhD4-J3vdlaNXdULg9xhOZhbsppK0o2bUs.js"></script>
+<script src="http://hooper.com/sites/hooper/files/js/js_W2_n-l0eik170bRs3L8g07i4Zmkc_OZsugduYWLWdgA.js"></script>
+<script src="http://use.typekit.com/syg0gfn.js"></script>
+<script>try{Typekit.load();}catch(e){};</script>
+<script src="http://hooper.com/sites/hooper/files/js/js_I8yX6RYPZb7AtMcDUA3QKDZqVkvEn35ED11_1i7vVpc.js"></script>
+<script>(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","//www.google-analytics.com/analytics.js","ga");ga("create", "UA-50901100-1", {"cookieDomain":"auto"});ga("set", "anonymizeIp", true);ga("set", "page", "/404.html?page=" + document.location.pathname + document.location.search + "&from=" + document.referrer);ga("send", "pageview");</script>
+<script src="http://hooper.com/sites/hooper/files/js/js_lknMHLuZOt2URQwNMpNeXzROh-tJbVEP6XjTIXUJWGI.js"></script>
+<script src="http://fast.fonts.com/jsapi/29d8e7ee-7c64-431f-9e8e-c07ee164c974.js"></script>
+<script src="http://hooper.com/sites/hooper/files/js/js_anAfG_YGEkYr2V3kTii1GHtQONVzbYWHIpHSz6JzBUA.js"></script>
+<script>jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":{"theme":"hooper","theme_token":"sNank5BPJggxb2ZLjXVVgE5yux8IceYsjTWxWODD1X8","js":{"0":1,"sites\/all\/themes\/hooper\/js\/hooperiso.js":1,"\/\/ajax.googleapis.com\/ajax\/libs\/jquery\/1.8.3\/jquery.min.js":1,"1":1,"misc\/jquery.once.js":1,"misc\/drupal.js":1,"sites\/all\/modules\/nbhd_gmaps\/scripts\/gmaps.js":1,"sites\/all\/modules\/nbhd_vimeo\/scripts\/jquery.fitvids.js":1,"http:\/\/use.typekit.com\/syg0gfn.js":1,"2":1,"sites\/all\/modules\/google_analytics\/googleanalytics.js":1,"3":1,"sites\/all\/themes\/hooper\/js\/imagesloaded.pkgd.js":1,"sites\/all\/themes\/hooper\/js\/isotope.pkgd.min.js":1,"http:\/\/fast.fonts.com\/jsapi\/29d8e7ee-7c64-431f-9e8e-c07ee164c974.js":1,"sites\/all\/themes\/hooper\/js\/script.js":1},"css":{"modules\/system\/system.base.css":1,"modules\/system\/system.menus.css":1,"modules\/system\/system.messages.css":1,"modules\/system\/system.theme.css":1,"modules\/comment\/comment.css":1,"modules\/field\/theme\/field.css":1,"modules\/node\/node.css":1,"modules\/search\/search.css":1,"modules\/user\/user.css":1,"sites\/all\/modules\/views\/css\/views.css":1,"sites\/all\/modules\/ctools\/css\/ctools.css":1,"sites\/all\/modules\/panels\/css\/panels.css":1,"sites\/all\/themes\/hooper\/system.menus.css":1,"sites\/all\/themes\/hooper\/system.messages.css":1,"sites\/all\/themes\/hooper\/system.theme.css":1,"sites\/all\/themes\/hooper\/css\/styles.css":1,"sites\/hooper\/files\/fontyourface\/font.css":1}},"googleanalytics":{"trackOutbound":1,"trackMailto":1,"trackDownload":1,"trackDownloadExtensions":"7z|aac|arc|arj|asf|asx|avi|bin|csv|doc(x|m)?|dot(x|m)?|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt(x|m)?|pot(x|m)?|pps(x|m)?|ppam|sld(x|m)?|thmx|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xls(x|m|b)?|xlt(x|m)|xlam|xml|z|zip"}});</script>
+      <!--[if lt IE 9]>
+    <script src="/sites/all/themes/zen/js/html5-respond.js"></script>
+    <![endif]-->
+  </head>
+<body class="html not-front not-logged-in no-sidebars page-null section-null" >
+      <p id="skip-link">
+      <a href="#main-menu" class="element-invisible element-focusable">Jump to navigation</a>
+    </p>
+      
+<div id="page">
+	<div class="header-transparency"><!--Hooper--></div>
+  <header class="header" id="header" role="banner">
+		      <a href="/" title="Home" rel="home" class="header__logo" id="logo"><img src="/sites/all/themes/hooper/images/logo.png" alt="Home" class="header__logo-image" /></a>
+      
+      <div class="header__region region region-header">
+    <div id="mobile-menu" class="mobile-item sprite"><!--UAV Protect--></div>
+    <div id="sm-menu" class="mobile-item sprite"><!--UAV Protect--></div>
+    <div id="block-block-2" class="block block-block first last odd">
+
+      
+  <div id="sm-header-wrap">
+<div class="sm sm-fb"><a class="sm-ico" href="https://www.facebook.com/hooperproductions"></a><a class="sm-txt" href="https://www.facebook.com/hooperproductions">Facebook</a></div>
+<div class="sm sm-tw"><a class="sm-ico" href="https://twitter.com/studio_hooper"></a><a class="sm-txt" href="https://twitter.com/studio_hooper">Twitter</a></div>
+<div class="sm sm-ln"><a class="sm-ico" href="https://www.linkedin.com/company/891475"></a><a class="sm-txt" href="https://www.linkedin.com/company/891475">LinkedIn</a></div>
+</div>
+
+</div>
+  </div>
+  </header>
+
+  <div id="main">
+
+    <div id="content" class="column" role="main">
+                  <a id="main-content"></a>
+                                                
+
+
+The requested page "/(null)" could not be found.          </div>
+
+  </div>
+
+    <footer id="footer" class="region region-footer">
+    <div id="block-block-1" class="block block-block first odd">
+
+      
+  <div id="footer-inner">
+<div id="footer-left">
+<div id="footer-left-inner">
+<div id="footer-logo"><img src="/sites/hooper/themes/hooper/images/footer_logo.png" /></div>
+<div id="footer-title">Hooper London</div>
+<div id="footer-address">ex170, Exmouth House<br />
+Exmouth Market<br />
+London<br />
+EC1R 0JH</div>
+<div id="footer-tel">Telephone<br />
++44 (0)203 176 7060</div>
+<div id="footer-email"><a href="mailto:info@hooper.com">info@hooper.com</a></div>
+<div id="footer-link"><a href="/">hooper.com</a></div>
+</div>
+</div>
+<div id="footer-right">
+<div id="footer-right-inner">© Copyright 2014 Hooper Productions LTD | <a href="/content/privacy-policy">Privacy Policy</a> | <a href="/content/terms-conditions">Terms Of Use</a> | Website designed and built by <a href="http://www.tensandunits.com">Tens &amp; Units</a></div>
+</div>
+</div>
+
+</div>
+<div id="block-block-4" class="block block-block last even">
+
+      
+  <style>
+<!--/*--><![CDATA[/* ><!--*/
+
+.header__region.region-header{min-height: 100%;}
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  .header__region.region-header #block-menu-menu-hooper-main-nav{ height: 62px; float: left; min-width: 450px; width: auto; top:-18px;}
+}
+
+/*--><!]]>*/
+</style><script>
+<!--//--><![CDATA[// ><!--
+
+(function($){
+  $(window).load(function(){
+    var $grid = $(".view-id-project_index_pages.grid").children(".view-content").isotope({});
+    $(".isotope-filter").find("button").click(function(){
+       var filterValue = $(this).attr('data-filter');
+       $grid.isotope({ filter: filterValue });
+       $( ".filter-button-group button" ).removeClass( "active" );
+       $( this ).addClass( "active" );
+    });
+    $(".panels-flexible-row").each(function(){
+      var textcontent = $(this).text();
+      if(textcontent.trim() == ''){
+        $(this).hide();
+      }
+    });
+  });
+}(jQuery));
+
+//--><!]]>
+</script>
+</div>
+  </footer>
+
+</div>
+
+  <script>
+				jQuery(document).ready(function(){
+    		jQuery(".vimeo-video").fitVids();
+  			});
+				</script>
+<script src="http://hooper.com/sites/hooper/files/js/js_yaftOD_XU2Y4x4azdgw5-zT_Tc7gj8F_x4E04WAZD0s.js"></script>
+</body>
+</html>
+
 0
 

@@ -1,6 +1,6 @@
 #include "socklib.h"
 #define TAILLE_TAB 255
-/* 	Structure reposant sur les listes chainés. 
+/* 	Structure reposant sur les listes chainés.
 	DescPage est une structure contenant la description de chacune des pages à traiter ou déjà traité
 */
 typedef struct _DescPage{
@@ -10,22 +10,23 @@ typedef struct _DescPage{
 	bool t_analyze; // SI Oui, on a déjà traité avec le thread d'analyse
 	struct _DescPage *suivant; //POur passer à la page suivante
 	/* ou faire char description[255][255]
-	
+
 	*/
 }DescPage;
 
 typedef struct _PageDownload{
 	char identifiant[TAILLE_TAB]; // Tableau bi-dimensionnel, contenant l'identifiant de la page & l'url a telechargé
-	struct _PageDownload *suivant;	
+	struct _PageDownload *suivant;
 	// Pour remplir cette structure, il faut ajouter chaque descPage ou t_download est à false
-	
+
 }PageDownload;
 
 typedef struct _PageAnalyze{
 	char identifiant[TAILLE_TAB]; // Tableau bi dimensionnel, contenant l'identifiant des oages tekecgargé mais pas traités
-	struct _PageAnalyze *suivant;	
+	struct _PageAnalyze *suivant;
 	// Pour remplir cette structure, il faut ajouter chaque descPage où t_download à true && t_analyze à false
 }PageAnalyze;
+
 typedef struct _ListeEnsemblePage{
 	DescPage *debut; // Premiere element de la liste de page
 	int nb_pages; //Indique le nombre de page à traité ou déjà traité
@@ -55,3 +56,27 @@ void initialisationPageAnalyze(ListeAnalyze l_analyze);
  * /!\ Avec la structure, bien gerer l'initialisation & le premier element
 */
 void recup_description_page(const char * url);
+
+/**
+ * Fonction qui se connecte au serveur, telecharge la page http://serveur:port/chemin et sauvegarde dans nom_fichier
+ * @param serveur
+ * @param port
+ * @param chemin
+ * @param nom_fichier
+ */
+//void http_get(const char * serveur, const char * port, const char * chemin, const char * nom_fichier);
+void http_get(const char * serveur, const char * port, const char * chemin, const char * nom_fichier);
+
+/**
+ * Fonction qui s'occupe d'analyser les pages afin de récupérer les liens,images,css,etc
+ * @param *PageAnalyse
+ * @param *PageDowload
+ */
+void analyse_page(PageAnalyze *analyse, PageDownload *download);
+
+/**
+ * Fonction qui s'occupe de télécharger les pages,images,css,etc
+ * @param *PageAnalyse
+ * @param *PageDowload
+ */
+void download_page(PageAnalyze *analyse, PageDownload *download);
