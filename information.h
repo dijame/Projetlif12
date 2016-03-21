@@ -1,50 +1,22 @@
 #include "socklib.h"
 #define TAILLE_TAB 255
-/* 	Structure reposant sur les listes chainés.
-	DescPage est une structure contenant la description de chacune des pages à traiter ou déjà traité
+/* 	Structure reposant sur des tableaux dynamique.
+	FilePage est une structure contenant les fichiers de chacune des pages à traiter ou à télécharger
 */
-typedef struct _DescPage{
-	char repertoire[TAILLE_TAB];
-	char url[TAILLE_TAB];
-	bool t_download; // Si Oui, on a déjà traité avec le thread de telechargement
-	bool t_analyze; // SI Oui, on a déjà traité avec le thread d'analyse
-	struct _DescPage *suivant; //POur passer à la page suivante
+typedef struct _FilePage{
+	char *repertoire[TAILLE_TAB];
+	char *url[TAILLE_TAB];
+	bool t_download[TAILLE_TAB]; // Si Oui, on a déjà traité avec le thread de telechargement
+	bool t_analyze[TAILLE_TAB]; // SI Oui, on a déjà traité avec le thread d'analyse
+	int socket; // Socket qui permettra la connexion entre l'application et le serveur
 	/* ou faire char description[255][255]
 
 	*/
-}DescPage;
+}FilePage;
 
-typedef struct _PageDownload{
-	char identifiant[TAILLE_TAB]; // Tableau bi-dimensionnel, contenant l'identifiant de la page & l'url a telechargé
-	struct _PageDownload *suivant;
-	// Pour remplir cette structure, il faut ajouter chaque descPage ou t_download est à false
-
-}PageDownload;
-
-typedef struct _PageAnalyze{
-	char identifiant[TAILLE_TAB]; // Tableau bi dimensionnel, contenant l'identifiant des oages tekecgargé mais pas traités
-	struct _PageAnalyze *suivant;
-	// Pour remplir cette structure, il faut ajouter chaque descPage où t_download à true && t_analyze à false
-}PageAnalyze;
-
-typedef struct _ListeEnsemblePage{
-	DescPage *debut; // Premiere element de la liste de page
-	int nb_pages; //Indique le nombre de page à traité ou déjà traité
-}ListeEnsemblePage;
-
-typedef struct _ListeDownload{
-	PageDownload *debut;
-	int nb_pages;
-}ListeDownload;
-
-typedef struct _ListeAnalyze{
-	PageAnalyze *debut;
-	int nb_pages;
-}ListeAnalyze;
 // Fonctions d'initialisations
-void initialisationDescPage(ListeEnsemblePage l_page);
-void initialisationPageDownload(ListeDownload l_download);
-void initialisationPageAnalyze(ListeAnalyze l_analyze);
+void initialisationFilePage(FilePage f);
+
 
 /** Fonction qui remplit la structure de description page
  *  Créér socket connexion, faire comme 1er TP, jusqu'a recoie et sauvedonnee
@@ -69,14 +41,12 @@ void http_get(const char * serveur, const char * port, const char * chemin, cons
 
 /**
  * Fonction qui s'occupe d'analyser les pages afin de récupérer les liens,images,css,etc
- * @param *PageAnalyse
- * @param *PageDowload
+ * @param *FilePage
  */
-void analyse_page(PageAnalyze *analyse, PageDownload *download);
+void analyse_page(FilePage *f);
 
 /**
  * Fonction qui s'occupe de télécharger les pages,images,css,etc
- * @param *PageAnalyse
- * @param *PageDowload
+ * @param *FilePage
  */
-void download_page(PageAnalyze *analyse, PageDownload *download);
+void download_page(FilePage *f);
