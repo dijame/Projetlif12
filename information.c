@@ -2,8 +2,15 @@
 #include <pthread.h>
 
 // Variables globales que se partagent les threads
+int socket; // Socket qui permettra la connexion entre l'application et le serveur
 pthread_cond_t t_cond = PTHREAD_COND_INITIALIZER; // Création de la condition
 pthread_mutex_t t_mutex = PTHREAD_MUTEX_INITIALIZER; // Création du mutex
+
+// Déclaration des structures et des tableaux pour traiter les pages;
+FilePage f;
+char *analyseur[TAILLE_TAB];
+char *downloadeur[TAILLE_TAB];
+
 bool finis = true; // Une variable qui indique si la page a terminé de se téléchargé
 char url[255];
 
@@ -13,9 +20,6 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     pthread_t pt_analyse;
     pthread_t pt_telecharger;
 
-    // Déclaration des structures pour traiter les pages;
-    FilePage f;
-
     // On garde l'url en mémoire
     strcpy(url,serveur);
     strcat(url,"/");
@@ -23,14 +27,14 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la socket et on l'a créé et on l'a test
-    if(f.socket = CreeSocketClient(serveur, port) == -1)
+    if(socket = CreeSocketClient(serveur, port) == -1)
         perror("Erreur sur la socket");
 
     // Envoie de la requète au serveur
-    EnvoieMessage(f.socket,"GET /%s HTTP/1.1\nHost: %s\n\n",chemin,serveur);
+    EnvoieMessage(socket,"GET /%s HTTP/1.1\nHost: %s\n\n",chemin,serveur);
 
     //Regarde le code HTTP, ex : 200,404,...
-    char* header = RecoieLigne(f.socket);
+    char* header = RecoieLigne(socket);
     char* tmp = malloc(sizeof(char)*(strlen(header)+4));
 
     strcpy(tmp,header); // On sauvegarde la première ligne de l'en-tête
@@ -52,7 +56,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     // En cas de redirection on recupère l'url
     if(code == 302) {
         while(strncmp(tmp,"Location:",9) != 0) {
-            tmp = RecoieLigne(f.socket);
+            tmp = RecoieLigne(socket);
         }
         // On récupère l'adresse sans le http://
         if(strncmp(tmp,"http://",7) == 0){
@@ -84,7 +88,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
             free(new_chemin);
         }
 
-        close(f.socket);
+        close(socket);
 
         // Enfin on sort de la fontion
         exit(0);
@@ -93,16 +97,16 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
      // RecoieLigne enlève les caractère spéciaux , c'est pourquoi on va attendre une ligne vide
      // Celle qui sépare l'en-tête du reste du corps
      while( strcmp(tmp,"") != 0) {
-        tmp = RecoieLigne(f.socket);
+        tmp = RecoieLigne(socket);
      }
      // Fin du traitement de l'en-tête \\
 
     //Création des threads
-    if(pthread_create(&pt_analyse,NULL,analyse_page,&f) != 0){
+    if(pthread_create(&pt_analyse,NULL,analyse_page,NULL) != 0){
         perror("Erreur création du thread analyse");
         exit(EXIT_FAILURE);
     }
-    if(pthread_create(&pt_download,NULL,download_page,&f) != 0){
+    if(pthread_create(&pt_download,NULL,download_page,NULL) != 0){
         perror("Erreur création du thread download");
         exit(EXIT_FAILURE);
     }
@@ -120,11 +124,11 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 
 
      // On ferme la socket
-     close(f.socket);
+     close(socket);
 
 }
 
-void analyse_page(FilePage *f){
+void analyse_page(){
 
     int i = 0; // Indice du tableau pour savoir où on en est
     char *ligne; // Variable qui récupérera la ligne courante
@@ -141,7 +145,7 @@ void analyse_page(FilePage *f){
         // Traitement de la page \\
         // Gestion des types de fichiers \\
 
-        ligne = RecoieLigne(f->socket);
+        ligne = RecoieLigne(socket);
         // On fait une copie de la ligne pour ne pas l'altérer
         cp_ligne = malloc(sizeof(char)*strlen(ligne));
         strcpy(cp_ligne,ligne);
@@ -222,12 +226,12 @@ void analyse_page(FilePage *f){
     pthread_exit(NULL);
 }
 
-void download_page(FilePage *f){
+void download_page(){
     //Téléchargement des ressources
     while(1){ // Boucle infini
 
     /* Récupérer le fichier,son extension, etc
-       nom_fichier = strrchr(f->repertoire[i],'/');
+       nom_fichier = strrchr(f.repertoire[i],'/');
     */
 
     }

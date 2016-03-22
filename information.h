@@ -7,11 +7,8 @@ typedef struct _FilePage{
 	char *repertoire[TAILLE_TAB];
 	char *url[TAILLE_TAB];
 	bool t_download[TAILLE_TAB]; // Si Oui, on a déjà traité avec le thread de telechargement
-	bool t_analyze[TAILLE_TAB]; // SI Oui, on a déjà traité avec le thread d'analyse
-	int socket; // Socket qui permettra la connexion entre l'application et le serveur
-	/* ou faire char description[255][255]
+	bool t_analyze[TAILLE_TAB]; // Si Oui, on a déjà traité avec le thread d'analyse
 
-	*/
 }FilePage;
 
 // Fonctions d'initialisations
