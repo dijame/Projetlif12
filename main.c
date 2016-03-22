@@ -6,9 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main(int argc, char** argv){
+int main(int argc, char** argv)
+{
 
-    if(argc == 3){
+    if(argc == 3)
+    {
         // On déclare les variables
         char url[255];
         char* serveur = NULL;
@@ -28,20 +30,23 @@ int main(int argc, char** argv){
         serveur = strtok(tmp,"/");
         // On s'occupe du chemin
         chemin = strtok(NULL,"");
+        // Si le chemin n'est pas renseigné
         if(chemin == NULL) chemin = "";
         // On sépare le port du serveur
         serveur = strtok(serveur,":");
         port = strtok(NULL,":");
 
-        if(port == NULL) {
+        if(port == NULL)
+        {
             port = "80";
         }
 
         printf("//Récupération de la page\\\n");
 
         http_get(serveur,port,chemin,argv[2]);
-    } else
+    }
+    else
         perror("Veuillez entrer le bon nombre d'arguments, l'url puis le nom du fichier ! ");
 
-	return 0;
+    return 0;
 }

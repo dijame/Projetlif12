@@ -3,16 +3,14 @@
 /* 	Structure reposant sur des tableaux dynamique.
 	FilePage est une structure contenant les fichiers de chacune des pages à traiter ou à télécharger
 */
-typedef struct _FilePage{
-	char *repertoire[TAILLE_TAB];
-	char *url[TAILLE_TAB];
-	bool t_download[TAILLE_TAB]; // Si Oui, on a déjà traité avec le thread de telechargement
-	bool t_analyze[TAILLE_TAB]; // SI Oui, on a déjà traité avec le thread d'analyse
-	int socket; // Socket qui permettra la connexion entre l'application et le serveur
-	/* ou faire char description[255][255]
+typedef struct _FilePage
+{
+    char *repertoire[TAILLE_TAB];
+    char *url[TAILLE_TAB];
+    bool t_download[TAILLE_TAB]; // Si Oui, on a déjà traité avec le thread de telechargement
+    bool t_analyze[TAILLE_TAB]; // Si Oui, on a déjà traité avec le thread d'analyse
 
-	*/
-}FilePage;
+} FilePage;
 
 // Fonctions d'initialisations
 void initialisationFilePage(FilePage f);
@@ -50,3 +48,9 @@ void analyse_page(FilePage *f);
  * @param *FilePage
  */
 void download_page(FilePage *f);
+
+/**
+ * Fonction qui rempli la structure ansi que le tableau analyseur
+ * @param *FilePage
+*/
+void rempliTableaux(char *type,char *cp_ligne);
