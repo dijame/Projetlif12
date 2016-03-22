@@ -7,6 +7,7 @@ pthread_mutex_t t_mutex = PTHREAD_MUTEX_INITIALIZER; // Création du mutex
 bool finis = true; // Une variable qui indique si la page a terminé de se téléchargé
 char url[255];
 
+// TODO: N'oublis pas de gérer le chunked
 void http_get(const char* serveur, const char* port, const char* chemin, const char* nom_fichier)
 {
     // Déclaration des threads
@@ -19,7 +20,6 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     // On garde l'url en mémoire
     strcpy(url,serveur);
     strcat(url,"/");
-    strcat(url,chemin);
 
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la socket et on l'a créé et on l'a test
@@ -46,8 +46,10 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     // On gère les erreurs ou réussites, ici on ne tiens pas compte précisement de tous les cas possibles
     if(code >= 200 && code < 400)
         printf("\n%d , %s\n",code,messerr);
-    else if(code >= 400 && code < 600)
+    else if(code >= 400 && code < 600){
         printf("\nErreur %d , %s\n",code,messerr);
+        exit(EXIT_FAILURE);
+    }
 
     // En cas de redirection on recupère l'url
     if(code == 302) {
@@ -68,7 +70,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
             http_get(new_serveur,port,new_chemin,nom_fichier);
 
         } else {
-            // On récupère le chemin sans la page (ex:"test.php" on le supprime)
+            // On récupère le chemin sans la page (ex:"./test.php" on le supprime)
             char* lastslash  = strrchr(chemin,'/');
             if(lastslash != NULL) *lastslash = '\0';
             printf("\%s\n",chemin);
@@ -142,6 +144,7 @@ void analyse_page(FilePage *f){
         // Gestion des types de fichiers \\
 
         ligne = RecoieLigne(f->socket);
+        // Gérer le chunked
         // On fait une copie de la ligne pour ne pas l'altérer
         cp_ligne = malloc(sizeof(char)*strlen(ligne));
         strcpy(cp_ligne,ligne);

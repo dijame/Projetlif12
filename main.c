@@ -28,7 +28,7 @@ int main(int argc, char** argv){
         serveur = strtok(tmp,"/");
         // On s'occupe du chemin
         chemin = strtok(NULL,"");
-
+        if(chemin == NULL) chemin = "";
         // On sépare le port du serveur
         serveur = strtok(serveur,":");
         port = strtok(NULL,":");
