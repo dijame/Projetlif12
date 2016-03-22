@@ -6,6 +6,10 @@ int socket; // Socket qui permettra la connexion entre l'application et le serve
 pthread_cond_t t_cond = PTHREAD_COND_INITIALIZER; // Création de la condition
 pthread_mutex_t t_mutex = PTHREAD_MUTEX_INITIALIZER; // Création du mutex
 
+// Variable convercant le cas chunked
+bool chunked = false; // Indiquera si la page est chunked ou pas
+int  chk_bytes;
+
 // Déclaration des structures et des tableaux pour traiter les pages;
 FilePage f;
 char *analyseur[TAILLE_TAB];
@@ -97,7 +101,13 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
      // RecoieLigne enlève les caractère spéciaux , c'est pourquoi on va attendre une ligne vide
      // Celle qui sépare l'en-tête du reste du corps
      while( strcmp(tmp,"") != 0) {
+        if(strcmp(tmp,"Transfer-Encoding: chunked"))
+            chunked = true;
         tmp = RecoieLigne(socket);
+     }
+     if(chunked) {
+        tmp = RecoieLigne(socket);
+        chk_bytes = strtol(tmp,NULL,16); // on parse l'hexa en octets
      }
      // Fin du traitement de l'en-tête \\
 
@@ -131,9 +141,10 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 void analyse_page(){
 
     int i = 0; // Indice du tableau pour savoir où on en est
+    int nb_bytes = 0; // Le nombre d'octets reçus pour le chunked
     char *ligne; // Variable qui récupérera la ligne courante
     char *cp_ligne; // Copie de ligne afin de ne pas modifer la ligne d'origine
-    char *type; // Type de fichier
+    char *chemin; // Chemin de fichier
     char *lastguimet; // Afin de supprimer le dernier guillemet des chemins
     char url_fichier[255]; // Variable permettant de mettre l'url du fichier dans le tableau
     strcpy(url_fichier,url); // On copie l'url de base
@@ -143,65 +154,81 @@ void analyse_page(){
         pthread_mutex_lock(&t_mutex);
 
         // Traitement de la page \\
-        // Gestion des types de fichiers \\
+        // Gestion des chemins de fichiers \\
 
         ligne = RecoieLigne(socket);
+
         // On fait une copie de la ligne pour ne pas l'altérer
         cp_ligne = malloc(sizeof(char)*strlen(ligne));
         strcpy(cp_ligne,ligne);
 
         // Image
-        if((type = strstr("<img",cp_ligne) != NULL){
-            if((type = strstr("src=",type) != NULL){
-                if(lastguimet = strrchr(type,'"') != NULL){
-                    lastguimet = '\0'; // On suppirme tous ce qui est après la guillemet
-                    type = type + 5; // On supprime le src="
+        if((chemin = strstr("<img",cp_ligne) != NULL){
+            if((chemin = strstr("src=",chemin) != NULL){
+                if(lastguimet = strrchr(chemin,'"') != NULL){
+                    lastguimet = '\0'; // On supprime tous ce qui est après la guillemet
+                    chemin = chemin + 5; // On supprime le src="
                     // On alloue l'espace pour garder les chemins en mémoire et on copie
-                    f->repertoire[i] = malloc(sizeof(char)*strlen(type));
-                    strcpy(f->repertoire[i],type);
-                    strcat(url_fichier,type);
+                    f->repertoire[i] = malloc(sizeof(char)*strlen(chemin));
+                    strcpy(f->repertoire[i],chemin);
+                    strcat(url_fichier,chemin);
                     f->url[i] = malloc(sizeof(char)*strlen(url_fichier));
                     strcpy(f->url[i],url_fichier);
                     f->t_analyze[i] = false;
                     f->t_download[i] = true;
+
+                     // On s'occupe maintenant de l'analyseur
+                    analyseur[i] = malloc(sizeof(char)*strlen(chemin));
+                    strcpy(analyseur[i],chemin);
+
                     // On remet l'url de base
                     strcpy(url_fichier,url);
                 }
             }
         }
         // Script JS
-        if((type = strstr("<script",cp_ligne) != NULL){
-            if((type = strstr("src=",type) != NULL){
-                if(lastguimet = strrchr(type,'"') != NULL){
+        if((chemin = strstr("<script",cp_ligne) != NULL){
+            if((chemin = strstr("src=",chemin) != NULL){
+                if(lastguimet = strrchr(chemin,'"') != NULL){
                     lastguimet = '\0'; // On suppirme tous ce qui est après la guillemet
-                    type = type + 5; // On supprime le src="
+                    chemin = chemin + 5; // On supprime le src="
                     // On alloue l'espace pour garder les chemins en mémoire et on copie
-                    f->repertoire[i] = malloc(sizeof(char)*strlen(type));
-                    strcpy(f->repertoire[i],type);
-                    strcat(url_fichier,type);
+                    f->repertoire[i] = malloc(sizeof(char)*strlen(chemin));
+                    strcpy(f->repertoire[i],chemin);
+                    strcat(url_fichier,chemin);
                     f->url[i] = malloc(sizeof(char)*strlen(url_fichier));
                     strcpy(f->url[i],url_fichier);
                     f->t_analyze[i] = false;
                     f->t_download[i] = true;
+
+                    // On s'occupe maintenant de l'analyseur
+                    analyseur[i] = malloc(sizeof(char)*strlen(chemin));
+                    strcpy(analyseur[i],chemin);
+
                     // On remet l'url de base
                     strcpy(url_fichier,url);
                 }
             }
         }
         // Lien CSS
-        if((type = strstr("<link",cp_ligne) != NULL){
-            if((type = strstr("href=",type) != NULL){
-                if(lastguimet = strrchr(type,'"') != NULL){
+        if((chemin = strstr("<link",cp_ligne) != NULL){
+            if((chemin = strstr("href=",chemin) != NULL){
+                if(lastguimet = strrchr(chemin,'"') != NULL){
                     lastguimet = '\0'; // On suppirme tous ce qui est après la guillemet
-                    type = type + 5; // On supprime le src="
+                    chemin = chemin + 5; // On supprime le src="
                     // On alloue l'espace pour garder les chemins en mémoire et on copie
-                    f->repertoire[i] = malloc(sizeof(char)*strlen(type));
-                    strcpy(f->repertoire[i],type);
-                    strcat(url_fichier,type);
+                    f->repertoire[i] = malloc(sizeof(char)*strlen(chemin));
+                    strcpy(f->repertoire[i],chemin);
+                    strcat(url_fichier,chemin);
                     f->url[i] = malloc(sizeof(char)*strlen(url_fichier));
                     strcpy(f->url[i],url_fichier);
                     f->t_analyze[i] = false;
                     f->t_download[i] = true;
+
+                     // On s'occupe maintenant de l'analyseur
+                    analyseur[i] = malloc(sizeof(char)*strlen(chemin));
+                    strcpy(analyseur[i],chemin);
+
                     // On remet l'url de base
                     strcpy(url_fichier,url);
                 }
@@ -211,6 +238,16 @@ void analyse_page(){
           nous renvoyé la page à analyser
         */
 
+        // Si on est dans le cas chunked
+        if(chunked){
+            // Quand on arrive à la taille indiqué par le chunked on stock la prochaine taille
+            if(nb_bytes == chk_bytes){
+                ligne = RecoieLigne(socket);
+                chk_bytes = strtol(ligne,NULL,16); // On parse la taille en hexa en octets
+                nb_bytes = 0;
+            }
+        }
+
         i++;
 
         if(i<TAILLE_TAB || (strcmp(ligne,"0") == 0)){
@@ -218,7 +255,7 @@ void analyse_page(){
             if(strcmp(ligne,"0") == 0) finis = false;
             // Lorsque que la condition est vérifié on envoie le signal
             pthread_cond_signal(&t_cond);
-            // Enfin on laisse l'accès à la ressource
+            // Enfin on laisse l'accès à la reschemin
             pthread_mutex_unlock(&t_mutex);
         }
     }
