@@ -12,7 +12,7 @@ typedef struct _FilePage
 
 } FilePage;
 
-// Fonctions d'initialisations
+// Fonctions d'initialisations ///////TESTS///
 void initialisationFilePage(FilePage f);
 
 
@@ -43,17 +43,17 @@ void http_get(const char * serveur, const char * port, const char * chemin, cons
  * Fonction qui s'occupe d'analyser les pages afin de récupérer les liens,images,css,etc
  * @param *f
  */
-void analyse_page(FilePage *f);
+void *analyse_page(void *arg);
 
 /**
  * Fonction qui s'occupe de télécharger les pages,images,css,etc
  * @param *f
  */
-void download_page(FilePage *f);
+void *download_page(void *arg);
 
 /**
  * Fonction qui rempli la structure ansi que le tableau analyseur
  * @param *type
  * @param *cp_ligne
 */
-void rempliTableaux(char *type,char *cp_ligne);
+void rempliTableauxAnalyse(char *type,char *cp_ligne);
