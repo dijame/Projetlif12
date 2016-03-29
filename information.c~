@@ -170,10 +170,10 @@ void analyse_page()
         strcpy(cp_ligne,ligne);
 
         // Image
-        if((cp_ligne = strstr("<img",cp_ligne) != NULL)
+        if((chemin = strstr("<img",cp_ligne) != NULL)
             rempliTableaux("src=",cp_ligne);
         // Script JS
-        if((cp_ligne = strstr("<script",cp_ligne) != NULL)
+        if((chemin = strstr("<script",cp_ligne) != NULL)
             rempliTableaux("src=",cp_ligne);
         // Lien CSS
         if((cp_ligne = strstr("<link",cp_ligne) != NULL)
