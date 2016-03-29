@@ -2,7 +2,7 @@
 #include <pthread.h>
 
 // Variables globales que se partagent les threads
-int socket; // Socket qui permettra la connexion entre l'application et le serveur
+int sockfd; // Socket qui permettra la connexion entre l'application et le serveur
 pthread_cond_t t_cond = PTHREAD_COND_INITIALIZER; // Création de la condition
 pthread_mutex_t t_mutex = PTHREAD_MUTEX_INITIALIZER; // Création du mutex
 
@@ -30,15 +30,15 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     strcat(url,"/");
 
     // On établit la connexion et on récupère l'en-tête du site \\
-    // On ouvre la socket et on l'a créé et on l'a test
-    if(socket = CreeSocketClient(serveur, port) == -1)
-        perror("Erreur sur la socket");
+    // On ouvre la sockfd et on l'a créé et on l'a test
+    if(sockfd = CreeSocketClient(serveur, port) == -1)
+        perror("Erreur sur la sockfd");
 
     // Envoie de la requète au serveur
-    EnvoieMessage(socket,"GET /%s HTTP/1.1\nHost: %s\n\n",chemin,serveur);
+    EnvoieMessage(sockfd,"GET /%s HTTP/1.1\nHost: %s\n\n",chemin,serveur);
 
     //Regarde le code HTTP, ex : 200,404,...
-    char* header = RecoieLigne(socket);
+    char* header = RecoieLigne(sockfd);
     char* tmp = malloc(sizeof(char)*(strlen(header)+4));
 
     strcpy(tmp,header); // On sauvegarde la première ligne de l'en-tête
@@ -64,7 +64,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     {
         while(strncmp(tmp,"Location:",9) != 0)
         {
-            tmp = RecoieLigne(socket);
+            tmp = RecoieLigne(sockfd);
         }
         // On récupère l'adresse sans le http://
         if(strncmp(tmp,"http://",7) == 0)
@@ -97,7 +97,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
             free(new_chemin);
         }
 
-        close(socket);
+        close(sockfd);
 
         // Enfin on sort de la fontion
         exit(0);
@@ -109,11 +109,11 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     {
         if(strcmp(tmp,"Transfer-Encoding: chunked"))
             chunked = true;
-        tmp = RecoieLigne(socket);
+        tmp = RecoieLigne(sockfd);
     }
     if(chunked)
     {
-        tmp = RecoieLigne(socket);
+        tmp = RecoieLigne(sockfd);
         chk_bytes = strtol(tmp,NULL,16); // on parse l'hexa en octets
     }
     // Fin du traitement de l'en-tête \\
@@ -144,8 +144,8 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 
 
 
-    // On ferme la socket
-    close(socket);
+    // On ferme la sockfd
+    close(sockfd);
 
 }
 
@@ -166,7 +166,7 @@ void analyse_page()
         // Traitement de la page \\
         // Gestion des chemins de fichiers \\
 
-        ligne = RecoieLigne(socket);
+        ligne = RecoieLigne(sockfd);
 
         // On fait une copie de la ligne pour ne pas l'altérer par la suite
         cp_ligne = malloc(sizeof(char)*strlen(ligne));
@@ -178,13 +178,13 @@ void analyse_page()
         // Script JS
         if((chemin = strstr("<script",cp_ligne) != NULL)
             rempliTableaux("src=",cp_ligne);
-        // Lien CSS
+        // Page CSS
         if((cp_ligne = strstr("<link",cp_ligne) != NULL)
             rempliTableaux("href=",cp_ligne);
+        // Lien <a>
+        if((cp_ligne = strstr("<a",cp_ligne) != NULL)
+            rempliTableaux("href=",cp_ligne);
 
-    /*Si le fichier est une page du site alors on le thread de téléchargement doit
-      nous renvoyé la page à analyser
-    */
 
     // Si on est dans le cas chunked
     if(chunked)
@@ -192,7 +192,7 @@ void analyse_page()
         // Quand on arrive à la taille indiqué par le chunked on stock la prochaine taille
         if(nb_bytes == chk_bytes)
             {
-                ligne = RecoieLigne(socket);
+                ligne = RecoieLigne(sockfd);
                 chk_bytes = strtol(ligne,NULL,16); // On parse la taille en hexa en octets
                 nb_bytes = 0;
             }
