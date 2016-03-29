@@ -12,7 +12,7 @@ typedef struct _FilePage
 
 } FilePage;
 
-// Fonctions d'initialisations
+// Fonctions d'initialisations ///////TESTS///
 void initialisationFilePage(FilePage f);
 
 
