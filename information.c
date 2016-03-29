@@ -19,11 +19,11 @@ bool finis = true; // Une variable qui indique si la page a terminé de se tél�
 char url[255];
 
 // TODO: N'oublis pas de gérer le chunked
-void http_get(const char* serveur, const char* port, const char* chemin, const char* nom_fichier)
+void http_get(const char* serveur, const char* port, const char* chemin, const char* nom_fichier, const int nb_th_a, const int nb_th_d)
 {
     // Déclaration des threads
-    pthread_t pt_analyse;
-    pthread_t pt_telecharger;
+    pthread_t pt_analyse[nb_th_a];
+    pthread_t pt_telecharger[nb_th_d];
 
     // On garde l'url en mémoire
     strcpy(url,serveur);
@@ -119,26 +119,30 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     // Fin du traitement de l'en-tête \\
 
     //Création des threads
-    if(pthread_create(&pt_analyse,NULL,analyse_page,NULL) != 0)
-    {
-        perror("Erreur création du thread analyse");
-        exit(EXIT_FAILURE);
+    for(int j = 0; j<nb_th_a;j++){
+        if(pthread_create(&pt_analyse[j],NULL,analyse_page,NULL) != 0)
+        {
+            perror("Erreur création du thread analyse");
+            exit(EXIT_FAILURE);
+        }
     }
-    if(pthread_create(&pt_download,NULL,download_page,NULL) != 0)
-    {
-        perror("Erreur création du thread download");
-        exit(EXIT_FAILURE);
+    for(int j = 0; j<nb_th_a;j++){
+        if(pthread_join(pt_analyse[j],NULL) != 0){
+            perror("join analyse fail");
+            exit(EXIT_FAILURE);
+        }
     }
-
-    if(pthread_join(pt_analyse,NULL) != 0)
-    {
-        perror("join analyse fail");
-        exit(EXIT_FAILURE);
+    for(int j = 0; j<nb_th_d;j++){
+        if(pthread_create(&pt_download[j],NULL,download_page,NULL) != 0){
+            perror("Erreur création du thread download");
+            exit(EXIT_FAILURE);
+        }
     }
-    if(pthread_join(pt_download,NULL) != 0)
-    {
-        perror("join download fail");
-        exit(EXIT_FAILURE);
+    for(int j = 0; j<nb_th_d;j++){
+        if(pthread_join(pt_download[j],NULL) != 0){
+            perror("join download fail");
+            exit(EXIT_FAILURE);
+        }
     }
 
 
@@ -179,19 +183,8 @@ void analyse_page()
         if((cp_ligne = strstr("<link",cp_ligne) != NULL)
             rempliTableaux("href=",cp_ligne);
         // Lien <a>
-        if((cp_ligne = strstr("<a",cp_ligne) != NULL){
-            pthread_t pt_new;
-            //Création du nouveau thread
-            if(pthread_create(&pt_new,NULL,analyse_page,NULL) != 0){
-                perror("Erreur création du nouveau thread analyse");
-                exit(EXIT_FAILURE);
-            }
-            if(pthread_join(pt_new,NULL) != 0){
-                perror("join new analyse fail");
-                exit(EXIT_FAILURE);
-            }
-        }
-
+        if((cp_ligne = strstr("<a",cp_ligne) != NULL)
+            rempliTableaux("href=",cp_ligne);
 
 
     // Si on est dans le cas chunked

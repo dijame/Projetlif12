@@ -33,24 +33,27 @@ void recup_description_page(const char * url);
  * @param port
  * @param chemin
  * @param nom_fichier
+ * @param nb_th_a
+ * @param nb_th_d
  */
 //void http_get(const char * serveur, const char * port, const char * chemin, const char * nom_fichier);
-void http_get(const char * serveur, const char * port, const char * chemin, const char * nom_fichier);
+void http_get(const char * serveur, const char * port, const char * chemin, const char * nom_fichier, const int nb_th_a, const int nb_th_d);
 
 /**
  * Fonction qui s'occupe d'analyser les pages afin de récupérer les liens,images,css,etc
- * @param *FilePage
+ * @param *f
  */
 void analyse_page(FilePage *f);
 
 /**
  * Fonction qui s'occupe de télécharger les pages,images,css,etc
- * @param *FilePage
+ * @param *f
  */
 void download_page(FilePage *f);
 
 /**
  * Fonction qui rempli la structure ansi que le tableau analyseur
- * @param *FilePage
+ * @param *type
+ * @param *cp_ligne
 */
 void rempliTableaux(char *type,char *cp_ligne);
