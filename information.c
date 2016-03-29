@@ -2,7 +2,7 @@
 #include <pthread.h>
 
 // Variables globales que se partagent les threads
-int socket; // Socket qui permettra la connexion entre l'application et le serveur
+int sockfd; // sockfd qui permettra la connexion entre l'application et le serveur
 pthread_cond_t t_cond = PTHREAD_COND_INITIALIZER; // Création de la condition
 pthread_mutex_t t_mutex = PTHREAD_MUTEX_INITIALIZER; // Création du mutex
 
@@ -23,22 +23,22 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 {
     // Déclaration des threads
     pthread_t pt_analyse;
-    pthread_t pt_telecharger;
+    pthread_t pt_download;
 
     // On garde l'url en mémoire
     strcpy(url,serveur);
     strcat(url,"/");
 
     // On établit la connexion et on récupère l'en-tête du site \\
-    // On ouvre la socket et on l'a créé et on l'a test
-    if(socket = CreeSocketClient(serveur, port) == -1)
-        perror("Erreur sur la socket");
+    // On ouvre la sockfd et on l'a créé et on l'a test
+    if(sockfd = CreesockfdClient(serveur, port) == -1)
+        perror("Erreur sur la sockfd");
 
     // Envoie de la requète au serveur
-    EnvoieMessage(socket,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,serveur);
+    EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,serveur);
 
     //Regarde le code HTTP, ex : 200,404,...
-    char* header = RecoieLigne(socket);
+    char* header = RecoieLigne(sockfd);
     char* tmp = malloc(sizeof(char)*(strlen(header)+4));
 
     strcpy(tmp,header); // On sauvegarde la première ligne de l'en-tête
@@ -64,7 +64,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     {
         while(strncmp(tmp,"Location:",9) != 0)
         {
-            tmp = RecoieLigne(socket);
+            tmp = RecoieLigne(sockfd);
         }
         // On récupère l'adresse sans le http://
         if(strncmp(tmp,"http://",7) == 0)
@@ -97,7 +97,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
             free(new_chemin);
         }
 
-        close(socket);
+        close(sockfd);
 
         // Enfin on sort de la fontion
         exit(0);
@@ -109,11 +109,11 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     {
         if(strcmp(tmp,"Transfer-Encoding: chunked"))
             chunked = true;
-        tmp = RecoieLigne(socket);
+        tmp = RecoieLigne(sockfd);
     }
     if(chunked)
     {
-        tmp = RecoieLigne(socket);
+        tmp = RecoieLigne(sockfd);
         chk_bytes = strtol(tmp,NULL,16); // on parse l'hexa en octets
     }
     // Fin du traitement de l'en-tête \\
@@ -144,14 +144,14 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 
 
 
-    // On ferme la socket
-    close(socket);
+    // On ferme la sockfd
+    close(sockfd);
 
 }
 
-void analyse_page()
+void *analyse_page(void *arg)
 {
-
+    (void)arg; //Pour enlever warning
     int i = 0; // Indice du tableau pour savoir où on en est
     int nb_bytes = 0; // Le nombre d'octets reçus pour le chunked
     char *ligne; // Variable qui récupérera la ligne courante
@@ -163,20 +163,20 @@ void analyse_page()
         // Traitement de la page \\
         // Gestion des chemins de fichiers \\
 
-        ligne = RecoieLigne(socket);
+        ligne = RecoieLigne(sockfd);
 
         // On fait une copie de la ligne pour ne pas l'altérer par la suite
         cp_ligne = malloc(sizeof(char)*strlen(ligne));
         strcpy(cp_ligne,ligne);
 
         // Image
-        if((cp_ligne = strstr("<img",cp_ligne) != NULL)
+        if(cp_ligne = strstr("<img",cp_ligne) != NULL)
             rempliTableaux("src=",cp_ligne);
         // Script JS
-        if((cp_ligne = strstr("<script",cp_ligne) != NULL)
+        if(cp_ligne = strstr("<script",cp_ligne) != NULL)
             rempliTableaux("src=",cp_ligne);
         // Lien CSS
-        if((cp_ligne = strstr("<link",cp_ligne) != NULL)
+        if(cp_ligne = strstr("<link",cp_ligne) != NULL)
             rempliTableaux("href=",cp_ligne);
 
     /*Si le fichier est une page du site alors on le thread de téléchargement doit
@@ -187,7 +187,7 @@ void analyse_page()
     if(chunked){
         // Quand on arrive à la taille indiqué par le chunked on stock la prochaine taille
         if(nb_bytes == chk_bytes){
-            ligne = RecoieLigne(socket);
+            ligne = RecoieLigne(sockfd);
             chk_bytes = strtol(ligne,NULL,16); // On parse la taille en hexa en octets
             nb_bytes = 0;
         }
@@ -207,8 +207,9 @@ void analyse_page()
     pthread_exit(NULL);
 }
 
-void download_page()
+void *download_page(void *arg)
 {
+    (void)arg; //Pour enlever warning
     char *ligne; // Variable qui récupérera la ligne courante
     char *nom_fichier; // Le nom du fichier reçu
     int outfd; // Descripteur du nouveau fichier
@@ -249,7 +250,7 @@ void rempliTableaux(char *type,char *cp_ligne)
     // On vérouille le mutex pour que ce thread soit prioritaire sur la ressource
     pthread_mutex_lock(&t_mutex);
 
-    if((chemin = strstr(type,cp_ligne) != NULL){
+    if(chemin = strstr(type,cp_ligne) != NULL){
         if(lastguimet = strrchr(chemin,'"') != NULL)
         {
             lastguimet = '\0'; // On suppirme tous ce qui est après la guillemet
