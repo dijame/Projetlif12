@@ -2,7 +2,9 @@
 #include <pthread.h>
 
 // Variables globales que se partagent les threads
-int sockfd; // sockfd qui permettra la connexion entre l'application et le serveur
+
+int sockfd; // Socket qui permettra la connexion entre l'application et le serveur
+
 pthread_cond_t t_cond = PTHREAD_COND_INITIALIZER; // Création de la condition
 pthread_mutex_t t_mutex = PTHREAD_MUTEX_INITIALIZER; // Création du mutex
 
@@ -16,18 +18,18 @@ char *analyseur[TAILLE_TAB];
 char *downloadeur[TAILLE_TAB];
 
 bool finis = true; // Une variable qui indique si la page a terminé de se téléchargé
-char url[255];
+char *url; // Copie du serveur
 
 // TODO: N'oublis pas de gérer le chunked
-void http_get(const char* serveur, const char* port, const char* chemin, const char* nom_fichier)
+void http_get(const char* serveur, const char* port, const char* chemin, const char* nom_fichier, const int nb_th_a, const int nb_th_d)
 {
     // Déclaration des threads
-    pthread_t pt_analyse;
-    pthread_t pt_download;
+    pthread_t pt_analyse[nb_th_a];
+    pthread_t pt_download[nb_th_d];
 
-    // On garde l'url en mémoire
+
+    // On garde le serveur en mémoire
     strcpy(url,serveur);
-    strcat(url,"/");
 
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
@@ -119,30 +121,32 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     // Fin du traitement de l'en-tête \\
 
     //Création des threads
-    if(pthread_create(&pt_analyse,NULL,analyse_page,NULL) != 0)
-    {
-        perror("Erreur création du thread analyse");
-        exit(EXIT_FAILURE);
+    for(int j = 0; j<nb_th_a;j++){
+        if(pthread_create(&pt_analyse[j],NULL,analyse_page,NULL) != 0)
+        {
+            perror("Erreur création du thread analyse");
+            exit(EXIT_FAILURE);
+        }
     }
 
-    if(pthread_create(&pt_download,NULL,download_page,NULL) != 0)
-    {
-        perror("Erreur création du thread download");
-        exit(EXIT_FAILURE);
+    for(int j = 0; j<nb_th_a;j++){
+        if(pthread_join(pt_analyse[j],NULL) != 0){
+            perror("join analyse fail");
+            exit(EXIT_FAILURE);
+        }
     }
-
-    if(pthread_join(pt_analyse,NULL) != 0)
-    {
-        perror("join analyse fail");
-        exit(EXIT_FAILURE);
+    for(int j = 0; j<nb_th_d;j++){
+        if(pthread_create(&pt_download[j],NULL,download_page,NULL) != 0){
+            perror("Erreur création du thread download");
+            exit(EXIT_FAILURE);
+        }
     }
-    if(pthread_join(pt_download,NULL) != 0)
-    {
-        perror("join download fail");
-        exit(EXIT_FAILURE);
+    for(int j = 0; j<nb_th_d;j++){
+        if(pthread_join(pt_download[j],NULL) != 0){
+            perror("join download fail");
+            exit(EXIT_FAILURE);
+        }
     }
-
-
 
 
     // On ferme la sockfd
@@ -153,14 +157,23 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 void *analyse_page(void *arg)
 {
     (void)arg; //Pour enlever warning
+    int sockfd; // La socket du thread
     int i = 0; // Indice du tableau pour savoir où on en est
     int nb_bytes = 0; // Le nombre d'octets reçus pour le chunked
+    char *chemin; // Le chemin du fichier contenu dans le tableau
     char *ligne; // Variable qui récupérera la ligne courante
     char *cp_ligne; // Copie de ligne afin de ne pas modifer la ligne d'origine
-    strcpy(url_fichier,url); // On copie l'url de base
+
+    // On établit la connexion et on récupère l'en-tête du site \\
+    // On ouvre la sockfd et on l'a créé et on l'a test
+    if(sockfd = CreesockfdClient(serveur, port) == -1)
+        perror("Erreur sur la sockfd");
 
     while(1)  // Boucle infini
     {
+        // Envoie de la requète au serveur
+        EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,url);
+
         // Traitement de la page \\
         // Gestion des chemins de fichiers \\
 
@@ -179,10 +192,10 @@ void *analyse_page(void *arg)
         // Lien CSS
         if(cp_ligne = strstr("<link",cp_ligne) != NULL)
             rempliTableaux("href=",cp_ligne);
+        // Lien <a>
+        if((cp_ligne = strstr("<a",cp_ligne) != NULL)
+            rempliTableaux("href=",cp_ligne);
 
-    /*Si le fichier est une page du site alors on le thread de téléchargement doit
-      nous renvoyé la page à analyser
-    */
 
     // Si on est dans le cas chunked
     if(chunked){
@@ -211,21 +224,31 @@ void *analyse_page(void *arg)
 void *download_page(void *arg)
 {
     (void)arg; //Pour enlever warning
+    int sockfd; // La socket du thread
+    char *chemin; // Le chemin du fichier contenu dans le tableau
     char *ligne; // Variable qui récupérera la ligne courante
     char *nom_fichier; // Le nom du fichier reçu
     int outfd; // Descripteur du nouveau fichier
 
+    // On établit la connexion et on récupère l'en-tête du site \\
+    // On ouvre la sockfd et on l'a créé et on l'a test
+    if(sockfd = CreesockfdClient(serveur, port) == -1)
+        perror("Erreur sur la sockfd");
+
     while(1){  // Boucle infini
         //Téléchargement des ressources
-        /* Récupérer le fichier,son extension, etc
-           nom_fichier = strrchr(f.repertoire[i],'/');
-        */
+        //Récupérer le fichier,son extension, etc
+        nom_fichier = strrchr(f.repertoire[i],'/');
+
         // Création du fichier
         outfd = open(nom_fichier,O_WRONLY | O_CREAT,S_IRWXU);
         if(outfd == -1) {
             perror("Erreur lors de la création du fichier");
             exit(EXIT_FAILURE);
         }
+        // Envoie de la requète au serveur
+        EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,url);
+
         // On va retirer l'en-tête
         // RecoieLigne enlève les caractère spéciaux , c'est pourquoi on va attendre une ligne vide
         // Celle qui sépare l'en-tête du reste du corps
@@ -242,7 +265,7 @@ void *download_page(void *arg)
     pthread_exit(NULL);
 }
 
-void rempliTableaux(char *type,char *cp_ligne)
+void rempliTableauxAnalyse(char *type,char *cp_ligne)
 {
     char *chemin; // Chemin de fichier
     char url_fichier[255]; // Variable permettant de mettre l'url du fichier dans le tableau
@@ -259,7 +282,9 @@ void rempliTableaux(char *type,char *cp_ligne)
             // On alloue l'espace pour garder les chemins en mémoire et on copie
             f.repertoire[i] = malloc(sizeof(char)*strlen(chemin));
             strcpy(f.repertoire[i],chemin);
-            strcat(url_fichier,chemin);
+            strcpy(url_fichier,url); // On copie l'url de base
+            strcat(url_fichier,"/"); // Ajout du slash
+            strcat(url_fichier,chemin); // Puis du chemin vers le fichier
             f.url[i] = malloc(sizeof(char)*strlen(url_fichier));
             strcpy(f.url[i],url_fichier);
             f.t_analyze[i] = false;
