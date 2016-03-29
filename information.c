@@ -86,7 +86,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
             if(lastslash != NULL) *lastslash = '\0';
             printf("\%s\n",chemin);
             tmp = tmp + 11; // On enlève le "./"
-            char* new_chemin  = malloc(sizeof(char)*(strlen(tmp)+strlen(chemin)));
+            char* new_chemin  = malloc(sizeof(char)*(strlen(tmp)+strlen(chemin)));Utilise pthread create :)
             strcpy(new_chemin,chemin);
             strcat(new_chemin,tmp);
 
@@ -124,6 +124,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
         perror("Erreur création du thread analyse");
         exit(EXIT_FAILURE);
     }
+
     if(pthread_create(&pt_download,NULL,download_page,NULL) != 0)
     {
         perror("Erreur création du thread download");
@@ -276,6 +277,31 @@ void rempliTableaux(char *type,char *cp_ligne)
 
     // Enfin on laisse l'accès à la reschemin
     pthread_mutex_unlock(&t_mutex);
+
+}
+
+char* accesTableauDownload(FilePage f, int i){
+    char *donnee;
+    // Cas à traiter
+    pthread_mutex_lock(&t_mutex);
+
+    donnee = malloc(sizeof(char)*strlen(f.repertoire[i]));
+    f.t_download[i] = true;
+
+    pthread_mutex_unlock(&t_mutex);
+    return *donnee;
+
+}
+
+char* accesTableauAnalyse(FilePage f, int i){
+    char *donnee;
+    // Cas à traiter
+    pthread_mutex_lock(&t_mutex);
+
+    donnee = malloc(sizeof(char)*strlen(f.repertoire[i]));
+    f.t_analyze[i] = true;
+    pthread_mutex_unlock(&t_mutex);
+    return *donnee;
 
 }
 
