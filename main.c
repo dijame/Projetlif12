@@ -1,5 +1,6 @@
 #include "socklib.h"
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -8,8 +9,8 @@
 
 int main(int argc, char** argv)
 {
-
-    if(argc == 3)
+   mkdir("test/test2/tes3",0700);
+   /* if(argc == 3)
     {
         // On déclare les variables
         char url[255];
@@ -47,6 +48,6 @@ int main(int argc, char** argv)
     }
     else
         perror("Veuillez entrer le bon nombre d'arguments, l'url puis le nom du fichier ! ");
-
+*/
     return 0;
 }

@@ -72,5 +72,6 @@ char* accesTableauAnalyse();
 
 /**
  * Fonction qui créer les dossiers du répertoire pour récupérer le site
+ * @param chemin
 */
-void creerRepertoire();
+void creerRepertoire(char* chemin);
