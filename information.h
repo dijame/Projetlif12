@@ -57,3 +57,20 @@ void *download_page(void *arg);
  * @param *cp_ligne
 */
 void rempliTableauxAnalyse(char *type,char *cp_ligne);
+
+/**
+ * Fonction qui récupère les données de la structure et du tableau download
+ * @return char*
+*/
+char* accesTableauDownload();
+
+/**
+ * Fonction qui récupère les données de la structure et du tableau analyse
+ * @return char*
+*/
+char* accesTableauAnalyse();
+
+/**
+ * Fonction qui créer les dossiers du répertoire pour récupérer le site
+*/
+void creerRepertoire();

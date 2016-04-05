@@ -17,6 +17,15 @@ FilePage f;
 char *analyseur[TAILLE_TAB];
 char *downloadeur[TAILLE_TAB];
 
+int indCstruct = 0; // Indice de la structure pour savoir où en est la complétion
+int indCana = 0; // Indice du tableau pour savoir où en est la complétion de l'analyseur
+int indCdown = 0; // Indice du tableau pour savoir où en est la complétion de dowloadeur
+
+int indRstruct = 0; // Indice du tableau pour savoir où en est la récupération
+int indRana = 0; // Indice du tableau pour savoir où en est la récupération de l'analyseur
+int indRdown = 0; // Indice du tableau pour savoir où en est la récupération de downloadeur
+
+
 bool finis = true; // Une variable qui indique si la page a terminé de se téléchargé
 char *url; // Copie du serveur
 
@@ -80,7 +89,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
             char* new_chemin  = tmp;
 
             // On relance la fonction de base
-            http_get(new_serveur,port,new_chemin,nom_fichier);
+            http_get(new_serveur,port,new_chemin,nom_fichier,nb_th_a,nb_th_d);
 
         } else {
             // On récupère le chemin sans la page (ex:"./test.php" on le supprime)
@@ -158,7 +167,6 @@ void *analyse_page(void *arg)
 {
     (void)arg; //Pour enlever warning
     int sockfd; // La socket du thread
-    int i = 0; // Indice du tableau pour savoir où on en est
     int nb_bytes = 0; // Le nombre d'octets reçus pour le chunked
     char *chemin; // Le chemin du fichier contenu dans le tableau
     char *ligne; // Variable qui récupérera la ligne courante
@@ -207,8 +215,6 @@ void *analyse_page(void *arg)
         }
     }
 
-        i++;
-
         if(i<TAILLE_TAB || (strcmp(ligne,"0") == 0))
     {
         // Quand la page a finis de se télécharger on lui indique par finis = false
@@ -237,8 +243,12 @@ void *download_page(void *arg)
 
     while(1){  // Boucle infini
         //Téléchargement des ressources
+        chemin = accesTableauDownload();
         //Récupérer le fichier,son extension, etc
-        nom_fichier = strrchr(f.repertoire[i],'/');
+        nom_fichier = malloc(sizeof(char)*strlen(strrchr(chemin,'/'));
+        strcpy(nom_fichier,strrchr(chemin,'/'));
+        strrchr(chemin,'/') = '\0';
+        // Crééation des répertoires
 
         // Création du fichier
         outfd = open(nom_fichier,O_WRONLY | O_CREAT,S_IRWXU);
@@ -252,15 +262,18 @@ void *download_page(void *arg)
         // On va retirer l'en-tête
         // RecoieLigne enlève les caractère spéciaux , c'est pourquoi on va attendre une ligne vide
         // Celle qui sépare l'en-tête du reste du corps
-        while( strcmp(tmp,"") != 0) {
-            tmp = RecoieLigne(sockfd);
+        while( strcmp(ligne,"") != 0) {
+            ligne = RecoieLigne(sockfd);
         }
 
         // Réception du code source du fichier
-        while( tmp != NULL) {
-            tmp = RecoieLigne(sockfd);
+        while( ligne != NULL) {
+            ligne = RecoieLigne(sockfd);
+            if(write(outfd,ligne,strlen(ligne)) != strlen(ligne))
+                perror("\nErreur lors de l'écriture du ficher\n");
         }
 
+        free(nom_fichier);
     }
     pthread_exit(NULL);
 }
@@ -280,23 +293,23 @@ void rempliTableauxAnalyse(char *type,char *cp_ligne)
             lastguimet = '\0'; // On suppirme tous ce qui est après la guillemet
             chemin = chemin + strlen(type) + 1; // On supprime le src=",etc
             // On alloue l'espace pour garder les chemins en mémoire et on copie
-            f.repertoire[i] = malloc(sizeof(char)*strlen(chemin));
-            strcpy(f.repertoire[i],chemin);
+            f.repertoire[indCstruct] = malloc(sizeof(char)*strlen(chemin));
+            strcpy(f.repertoire[indCstruct],chemin);
             strcpy(url_fichier,url); // On copie l'url de base
             strcat(url_fichier,"/"); // Ajout du slash
             strcat(url_fichier,chemin); // Puis du chemin vers le fichier
-            f.url[i] = malloc(sizeof(char)*strlen(url_fichier));
-            strcpy(f.url[i],url_fichier);
-            f.t_analyze[i] = false;
-            f.t_download[i] = true;
+            f.url[indCstruct] = malloc(sizeof(char)*strlen(url_fichier));
+            strcpy(f.url[indCstruct],url_fichier);
+            f.t_analyze[indCstruct] = false;
+            f.t_download[indCstruct] = true;
 
             // On s'occupe maintenant de l'analyseur
-            analyseur[i] = malloc(sizeof(char)*strlen(chemin));
-            strcpy(analyseur[i],chemin);
+            analyseur[indCana] = malloc(sizeof(char)*strlen(chemin));
+            strcpy(analyseur[indCana],chemin);
 
-            // On réinitialise les variables
-            strcpy(cp_ligne,ligne); // On recopie la ligne de base
-            strcpy(url_fichier,url);// On remet l'url de base
+            // On incrémente
+            indCana++;
+            indCstruct++;
         }
     }
 
@@ -305,28 +318,44 @@ void rempliTableauxAnalyse(char *type,char *cp_ligne)
 
 }
 
-char* accesTableauDownload(FilePage f, int i){
+char* accesTableauDownload(){
     char *donnee;
     // Cas à traiter
     pthread_mutex_lock(&t_mutex);
 
-    donnee = malloc(sizeof(char)*strlen(f.repertoire[i]));
-    f.t_download[i] = true;
+    donnee = malloc(sizeof(char)*strlen(downloadeur[indRdown]));
+    strcpy(donnee,downloadeur[indRdown]);
+    f.t_download[indRstruct] = true;
+
+    // On incrémente
+    indRdown++;
+    indRstruct++;
 
     pthread_mutex_unlock(&t_mutex);
-    return *donnee;
+    return donnee;
 
 }
 
-char* accesTableauAnalyse(FilePage f, int i){
+char* accesTableauAnalyse(){
     char *donnee;
     // Cas à traiter
     pthread_mutex_lock(&t_mutex);
 
-    donnee = malloc(sizeof(char)*strlen(f.repertoire[i]));
-    f.t_analyze[i] = true;
+    donnee = malloc(sizeof(char)*strlen(analyseur[indRana]));
+    strcpy(donnee,analyseur[indRana]);
+    f.t_analyze[indRstruct] = true;
+
+    // On incrémente
+    indRana++;
+    indRstruct++;
+
     pthread_mutex_unlock(&t_mutex);
-    return *donnee;
+    return donnee;
+
+}
+
+void creerRepertoire(char* chemin){
+
 
 }
 
