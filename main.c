@@ -9,8 +9,7 @@
 
 int main(int argc, char** argv)
 {
-   mkdir("test/test2/tes3",0700);
-   /* if(argc == 3)
+   if(argc == 3)
     {
         // On déclare les variables
         char url[255];
@@ -48,6 +47,6 @@ int main(int argc, char** argv)
     }
     else
         perror("Veuillez entrer le bon nombre d'arguments, l'url puis le nom du fichier ! ");
-*/
+
     return 0;
 }

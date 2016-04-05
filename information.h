@@ -1,4 +1,7 @@
 #include "socklib.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
 #define TAILLE_TAB 255
 /* 	Structure reposant sur des tableaux dynamique.
 	FilePage est une structure contenant les fichiers de chacune des pages à traiter ou à télécharger

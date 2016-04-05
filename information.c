@@ -3,6 +3,8 @@
 
 // Variables globales que se partagent les threads
 
+char g_serveur[255];
+char g_port[255];
 int sockfd; // Socket qui permettra la connexion entre l'application et le serveur
 
 pthread_cond_t t_cond = PTHREAD_COND_INITIALIZER; // Création de la condition
@@ -39,10 +41,12 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 
     // On garde le serveur en mémoire
     strcpy(url,serveur);
+    strcpy(g_serveur,serveur);
+    strcpy(g_port,port);
 
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
-    if(sockfd = CreesockfdClient(serveur, port) == -1)
+    if(sockfd = CreeSocketClient(serveur, port) == -1)
         perror("Erreur sur la sockfd");
 
     // Envoie de la requète au serveur
@@ -97,14 +101,14 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
             if(lastslash != NULL) *lastslash = '\0';
             printf("\%s\n",chemin);
             tmp = tmp + 11; // On enlève le "./"
-            char* new_chemin  = malloc(sizeof(char)*(strlen(tmp)+strlen(chemin)));Utilise pthread create :)
+            char* new_chemin  = malloc(sizeof(char)*(strlen(tmp)+strlen(chemin)));//Utilise pthread create :)
             strcpy(new_chemin,chemin);
             strcat(new_chemin,tmp);
 
             printf("\%s\n",new_chemin);
 
             // On relance la fonction de base
-            http_get(serveur,port,new_chemin,nom_fichier);
+            http_get(serveur,port,new_chemin,nom_fichier,nb_th_a,nb_th_d);
             free(new_chemin);
         }
 
@@ -130,31 +134,39 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     // Fin du traitement de l'en-tête \\
 
     //Création des threads
-    for(int j = 0; j<nb_th_a;j++){
+    int j = 0;
+    while(j<nb_th_a){
         if(pthread_create(&pt_analyse[j],NULL,analyse_page,NULL) != 0)
         {
             perror("Erreur création du thread analyse");
             exit(EXIT_FAILURE);
         }
+        ++j;
     }
 
-    for(int j = 0; j<nb_th_a;j++){
+    j = 0;
+    while(j<nb_th_a){
         if(pthread_join(pt_analyse[j],NULL) != 0){
             perror("join analyse fail");
             exit(EXIT_FAILURE);
         }
+        ++j;
     }
-    for(int j = 0; j<nb_th_d;j++){
+    j = 0;
+    while(j<nb_th_d){
         if(pthread_create(&pt_download[j],NULL,download_page,NULL) != 0){
             perror("Erreur création du thread download");
             exit(EXIT_FAILURE);
         }
+        ++j;
     }
-    for(int j = 0; j<nb_th_d;j++){
+    j = 0;
+    while(j<nb_th_d){
         if(pthread_join(pt_download[j],NULL) != 0){
             perror("join download fail");
             exit(EXIT_FAILURE);
         }
+        ++j;
     }
 
 
@@ -174,7 +186,7 @@ void *analyse_page(void *arg)
 
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
-    if(sockfd = CreesockfdClient(serveur, port) == -1)
+    if(sockfd = CreeSocketClient(g_serveur, g_port) == -1)
         perror("Erreur sur la sockfd");
 
     while(1)  // Boucle infini
@@ -193,16 +205,16 @@ void *analyse_page(void *arg)
 
         // Image
         if(cp_ligne = strstr("<img",cp_ligne) != NULL)
-            rempliTableaux("src=",cp_ligne);
+            rempliTableauxAnalyse("src=",cp_ligne);
         // Script JS
         if(cp_ligne = strstr("<script",cp_ligne) != NULL)
-            rempliTableaux("src=",cp_ligne);
+            rempliTableauxAnalyse("src=",cp_ligne);
         // Lien CSS
         if(cp_ligne = strstr("<link",cp_ligne) != NULL)
-            rempliTableaux("href=",cp_ligne);
+            rempliTableauxAnalyse("href=",cp_ligne);
         // Lien <a>
-        if((cp_ligne = strstr("<a",cp_ligne) != NULL)
-            rempliTableaux("href=",cp_ligne);
+        if(cp_ligne = strstr("<a",cp_ligne) != NULL)
+            rempliTableauxAnalyse("href=",cp_ligne);
 
 
     // Si on est dans le cas chunked
@@ -215,13 +227,7 @@ void *analyse_page(void *arg)
         }
     }
 
-        if(i<TAILLE_TAB || (strcmp(ligne,"0") == 0))
-    {
-        // Quand la page a finis de se télécharger on lui indique par finis = false
-        if(strcmp(ligne,"0") == 0) finis = false;
 
-
-        }
     }
 
     pthread_exit(NULL);
@@ -234,20 +240,22 @@ void *download_page(void *arg)
     char *chemin; // Le chemin du fichier contenu dans le tableau
     char *ligne; // Variable qui récupérera la ligne courante
     char *nom_fichier; // Le nom du fichier reçu
+    char *lastslash;
     int outfd; // Descripteur du nouveau fichier
 
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
-    if(sockfd = CreesockfdClient(serveur, port) == -1)
+    if(sockfd = CreeSocketClient(g_serveur, g_port) == -1)
         perror("Erreur sur la sockfd");
 
     while(1){  // Boucle infini
         //Téléchargement des ressources
         chemin = accesTableauDownload();
         //Récupérer le fichier,son extension, etc
-        nom_fichier = malloc(sizeof(char)*strlen(strrchr(chemin,'/'));
-        strcpy(nom_fichier,strrchr(chemin,'/'));
-        strrchr(chemin,'/') = '\0';
+        lastslash = strrchr(chemin,'/');
+        nom_fichier = malloc(sizeof(char)*strlen(lastslash));
+        strcpy(nom_fichier,lastslash);
+        lastslash = '\0';
         // Crééation des répertoires
 
         // Création du fichier
@@ -355,8 +363,17 @@ char* accesTableauAnalyse(){
 }
 
 void creerRepertoire(char* chemin){
-
-
+    char* repertoire = strtok(chemin,"/");
+    struct stat st = {0};
+    while(repertoire != NULL) {
+        if(stat(repertoire,&st) == -1){
+            if(mkdir(repertoire,0700) == -1){
+                perror("Erreur création du dossier");
+                break;
+            }
+        }
+        repertoire = strtok(chemin,"/");
+    }
 }
 
 
