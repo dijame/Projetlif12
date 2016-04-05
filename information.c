@@ -3,9 +3,8 @@
 
 // Variables globales que se partagent les threads
 
-char g_serveur[255];
-char g_port[255];
-int sockfd; // Socket qui permettra la connexion entre l'application et le serveur
+char g_serveur[255]; // Copie du serveur
+char g_port[255]; // Copie du port
 
 pthread_cond_t t_cond = PTHREAD_COND_INITIALIZER; // Création de la condition
 pthread_mutex_t t_mutex = PTHREAD_MUTEX_INITIALIZER; // Création du mutex
@@ -29,7 +28,6 @@ int indRdown = 0; // Indice du tableau pour savoir où en est la récupération 
 
 
 bool finis = true; // Une variable qui indique si la page a terminé de se téléchargé
-char *url; // Copie du serveur
 
 // TODO: N'oublis pas de gérer le chunked
 void http_get(const char* serveur, const char* port, const char* chemin, const char* nom_fichier, const int nb_th_a, const int nb_th_d)
@@ -39,10 +37,11 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     pthread_t pt_download[nb_th_d];
 
 
-    // On garde le serveur en mémoire
-    strcpy(url,serveur);
+    // On garde le serveur et le port en mémoire
     strcpy(g_serveur,serveur);
     strcpy(g_port,port);
+
+    int sockfd; // Socket qui permettra la connexion entre l'application et le serveur
 
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
@@ -192,7 +191,7 @@ void *analyse_page(void *arg)
     while(1)  // Boucle infini
     {
         // Envoie de la requète au serveur
-        EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,url);
+        EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,g_serveur);
 
         // Traitement de la page \\
         // Gestion des chemins de fichiers \\
@@ -265,7 +264,7 @@ void *download_page(void *arg)
             exit(EXIT_FAILURE);
         }
         // Envoie de la requète au serveur
-        EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,url);
+        EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,g_serveur);
 
         // On va retirer l'en-tête
         // RecoieLigne enlève les caractère spéciaux , c'est pourquoi on va attendre une ligne vide
@@ -303,7 +302,7 @@ void rempliTableauxAnalyse(char *type,char *cp_ligne)
             // On alloue l'espace pour garder les chemins en mémoire et on copie
             f.repertoire[indCstruct] = malloc(sizeof(char)*strlen(chemin));
             strcpy(f.repertoire[indCstruct],chemin);
-            strcpy(url_fichier,url); // On copie l'url de base
+            strcpy(url_fichier,g_serveur); // On copie l'url de base
             strcat(url_fichier,"/"); // Ajout du slash
             strcat(url_fichier,chemin); // Puis du chemin vers le fichier
             f.url[indCstruct] = malloc(sizeof(char)*strlen(url_fichier));
@@ -371,6 +370,7 @@ void creerRepertoire(char* chemin){
                 perror("Erreur création du dossier");
                 break;
             }
+
         }
         repertoire = strtok(chemin,"/");
     }
