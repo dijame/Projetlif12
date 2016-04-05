@@ -41,11 +41,11 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     strcpy(g_serveur,serveur);
     strcpy(g_port,port);
 
-    int sockfd; // Socket qui permettra la connexion entre l'application et le serveur
+    int sockfd = CreeSocketClient(serveur, port) ; // Socket qui permettra la connexion entre l'application et le serveur
 
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
-    if(sockfd = CreeSocketClient(serveur, port) == -1)
+    if(sockfd== -1)
         perror("Erreur sur la sockfd");
 
     // Envoie de la requète au serveur
@@ -177,7 +177,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 void *analyse_page(void *arg)
 {
     (void)arg; //Pour enlever warning
-    int sockfd; // La socket du thread
+    int sockfd = CreeSocketClient(g_serveur, g_port) ; // La socket du thread
     int nb_bytes = 0; // Le nombre d'octets reçus pour le chunked
     char *chemin; // Le chemin du fichier contenu dans le tableau
     char *ligne; // Variable qui récupérera la ligne courante
@@ -185,7 +185,7 @@ void *analyse_page(void *arg)
 
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
-    if(sockfd = CreeSocketClient(g_serveur, g_port) == -1)
+    if(sockfd == -1)
         perror("Erreur sur la sockfd");
 
     while(1)  // Boucle infini
@@ -235,7 +235,7 @@ void *analyse_page(void *arg)
 void *download_page(void *arg)
 {
     (void)arg; //Pour enlever warning
-    int sockfd; // La socket du thread
+    int sockfd  = CreeSocketClient(g_serveur, g_port) ; // La socket du thread
     char *chemin; // Le chemin du fichier contenu dans le tableau
     char *ligne; // Variable qui récupérera la ligne courante
     char *nom_fichier; // Le nom du fichier reçu
@@ -244,7 +244,7 @@ void *download_page(void *arg)
 
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
-    if(sockfd = CreeSocketClient(g_serveur, g_port) == -1)
+    if(sockfd == -1)
         perror("Erreur sur la sockfd");
 
     while(1){  // Boucle infini
