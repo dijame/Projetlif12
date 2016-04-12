@@ -53,7 +53,8 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
 
     //Regarde le code HTTP, ex : 200,404,...
     char* header = RecoieLigne(sockfd);
-    char* tmp = malloc(sizeof(char)*(strlen(header)+4));
+    int s_header = strlen(header);
+    char* tmp = malloc(sizeof(char)*(s_header+4));
 
     strcpy(tmp,header); // On sauvegarde la première ligne de l'en-tête
     header = strtok(header," "); // On découpe la chaine en délimitant pas des espaces
@@ -149,6 +150,7 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
             perror("join analyse fail");
             exit(EXIT_FAILURE);
         }
+
         ++j;
     }
     j = 0;
@@ -180,57 +182,68 @@ void *analyse_page(void *arg)
     int sockfd = CreeSocketClient(g_serveur, g_port) ; // La socket du thread
     int nb_bytes = 0; // Le nombre d'octets reçus pour le chunked
     char *chemin; // Le chemin du fichier contenu dans le tableau
-    char *ligne; // Variable qui récupérera la ligne courante
+     // Variable qui récupérera la ligne courante
     char *cp_ligne; // Copie de ligne afin de ne pas modifer la ligne d'origine
-
+    char *ligne;
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
     if(sockfd == -1)
         perror("Erreur sur la sockfd");
-
+EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,g_serveur);
     while(1)  // Boucle infini
     {
         // Envoie de la requète au serveur
-        EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,g_serveur);
 
         // Traitement de la page \\
-        // Gestion des chemins de fichiers \\
+        // Gestion des chemins de fichiers
+       // ligne = RecoieLigne(sockfd); initial ligne à la place de REcoie ligne
 
-        ligne = RecoieLigne(sockfd);
 
         // On fait une copie de la ligne pour ne pas l'altérer par la suite
-        cp_ligne = malloc(sizeof(char)*strlen(ligne));
-        strcpy(cp_ligne,ligne);
+        /*
+         * Avant on faisait ligne = RecoieLigne(sockfd)
+         * Avec ca probleme de segmentation quel que soit ce qu'on fait
+         * TOus les recoiesLIgne(sockfd) de cette fonction ont remplacé ligne
+         *
+        */
+        cp_ligne = malloc(sizeof(char)*strlen(RecoieLigne(sockfd)));
+
+        strcpy(cp_ligne,RecoieLigne(sockfd));
+        printf(" Ligne : %s\n",cp_ligne);
+
+        if (strcmp("</html>",cp_ligne) ==0)
+            break;
+
+            //break; //Pour sortir de la boucle
+            /*
+             * Non optimisé : Si sur la ligne il y'a autre chose que </html> c'est pas pris en compte
+            */
 
         // Image
-        if(cp_ligne = strstr("<img",cp_ligne) != NULL)
+        if(strstr("<img",cp_ligne) != NULL)
             rempliTableauxAnalyse("src=",cp_ligne);
         // Script JS
-        if(cp_ligne = strstr("<script",cp_ligne) != NULL)
+        if(strstr("<script",cp_ligne) != NULL)
             rempliTableauxAnalyse("src=",cp_ligne);
         // Lien CSS
-        if(cp_ligne = strstr("<link",cp_ligne) != NULL)
+        if(strstr("<link",cp_ligne) != NULL)
             rempliTableauxAnalyse("href=",cp_ligne);
         // Lien <a>
-        if(cp_ligne = strstr("<a",cp_ligne) != NULL)
+        if(strstr("<a",cp_ligne) != NULL)
             rempliTableauxAnalyse("href=",cp_ligne);
-
-
     // Si on est dans le cas chunked
-    if(chunked){
-        // Quand on arrive à la taille indiqué par le chunked on stock la prochaine taille
-        if(nb_bytes == chk_bytes){
-            ligne = RecoieLigne(sockfd);
-            chk_bytes = strtol(ligne,NULL,16); // On parse la taille en hexa en octets
-            nb_bytes = 0;
-        }
-    }
-
-
-    }
-
+        if(chunked){
+            // Quand on arrive à la taille indiqué par le chunked on stock la prochaine taille
+            if(nb_bytes == chk_bytes){
+                //ligne = RecoieLigne(sockfd);
+                chk_bytes = strtol(/*ligne*/RecoieLigne(sockfd),NULL,16); // On parse la taille en hexa en octets
+                nb_bytes = 0;
+            }
+        } // FIn if chunked
+    }// FIn while(1
+    close(sockfd);
     pthread_exit(NULL);
-}
+}// Fin void analyse_page
 
 void *download_page(void *arg)
 {
@@ -241,17 +254,20 @@ void *download_page(void *arg)
     char *nom_fichier; // Le nom du fichier reçu
     char *lastslash;
     int outfd; // Descripteur du nouveau fichier
-
+printf("\nANALYSEJFIDSO\n");
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
     if(sockfd == -1)
         perror("Erreur sur la sockfd");
-
     while(1){  // Boucle infini
         //Téléchargement des ressources
-        chemin = accesTableauDownload();
+
+        //chemin = accesTableauDownload();
+        printf("BUGUGU");
         //Récupérer le fichier,son extension, etc
+        lastslash = malloc(sizeof(char)*strlen(accesTableauDownload()));
         lastslash = strrchr(chemin,'/');
+        printf("FDP");
         nom_fichier = malloc(sizeof(char)*strlen(lastslash));
         strcpy(nom_fichier,lastslash);
         lastslash = '\0';
@@ -280,8 +296,9 @@ void *download_page(void *arg)
                 perror("\nErreur lors de l'écriture du ficher\n");
         }
 
-        free(nom_fichier);
-    }
+            free(nom_fichier);
+    } // FIn while(1)
+    close(sockfd);
     pthread_exit(NULL);
 }
 
@@ -293,9 +310,10 @@ void rempliTableauxAnalyse(char *type,char *cp_ligne)
 
     // On vérouille le mutex pour que ce thread soit prioritaire sur la ressource
     pthread_mutex_lock(&t_mutex);
-
-    if(chemin = strstr(type,cp_ligne) != NULL){
-        if(lastguimet = strrchr(chemin,'"') != NULL)
+    chemin = strstr(type,cp_ligne);
+    lastguimet = strrchr(chemin, '"');
+    if(chemin != NULL){
+        if(lastguimet != NULL)
         {
             lastguimet = '\0'; // On suppirme tous ce qui est après la guillemet
             chemin = chemin + strlen(type) + 1; // On supprime le src=",etc
@@ -326,11 +344,11 @@ void rempliTableauxAnalyse(char *type,char *cp_ligne)
 }
 
 char* accesTableauDownload(){
-    char *donnee;
+    //char *donnee;
     // Cas à traiter
     pthread_mutex_lock(&t_mutex);
 
-    donnee = malloc(sizeof(char)*strlen(downloadeur[indRdown]));
+    char *donnee = (char*)malloc(sizeof(char)*strlen(downloadeur[indRdown]) );
     strcpy(donnee,downloadeur[indRdown]);
     f.t_download[indRstruct] = true;
 
@@ -339,6 +357,7 @@ char* accesTableauDownload(){
     indRstruct++;
 
     pthread_mutex_unlock(&t_mutex);
+
     return donnee;
 
 }

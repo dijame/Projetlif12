@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 
         printf("//Récupération de la page\\\n");
 
-        http_get(serveur,port,chemin,argv[2]);
+        http_get(serveur,port,chemin,argv[2],1,1);
     }
     else
         perror("Veuillez entrer le bon nombre d'arguments, l'url puis le nom du fichier ! ");
