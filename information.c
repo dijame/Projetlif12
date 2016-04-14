@@ -9,10 +9,6 @@ char g_port[255]; // Copie du port
 pthread_cond_t t_cond = PTHREAD_COND_INITIALIZER; // Création de la condition
 pthread_mutex_t t_mutex = PTHREAD_MUTEX_INITIALIZER; // Création du mutex
 
-// Variable convercant le cas chunked
-bool chunked = false; // Indiquera si la page est chunked ou pas
-int  chk_bytes;
-
 // Déclaration des structures et des tableaux pour traiter les pages;
 FilePage f;
 char *analyseur[TAILLE_TAB];
@@ -41,97 +37,27 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
     strcpy(g_serveur,serveur);
     strcpy(g_port,port);
 
-    int sockfd = CreeSocketClient(serveur, port) ; // Socket qui permettra la connexion entre l'application et le serveur
+    char url_fichier[255]; // Variable permettant de mettre l'url du fichier dans le tableau
+    // On insère le premier lien à analyser dans l'analyseur
+    // On alloue l'espace pour garder les chemins en mémoire et on copie
+    f.repertoire[indCstruct] = malloc(sizeof(char)*strlen(chemin));
+    strcpy(f.repertoire[indCstruct],chemin);
+    strcpy(url_fichier,g_serveur); // On copie l'url de base
+    strcat(url_fichier,"/"); // Ajout du slash
+    strcat(url_fichier,chemin); // Puis du chemin vers le fichier
+    f.url[indCstruct] = malloc(sizeof(char)*strlen(url_fichier));
+    strcpy(f.url[indCstruct],url_fichier);
+    f.t_analyze[indCstruct] = false;
+    f.t_download[indCstruct] = false;
 
-    // On établit la connexion et on récupère l'en-tête du site \\
-    // On ouvre la sockfd et on l'a créé et on l'a test
-    if(sockfd== -1)
-        perror("Erreur sur la sockfd");
+    // On s'occupe maintenant de l'analyseur
+    analyseur[indCana] = malloc(sizeof(char)*strlen(chemin));
+    strcpy(analyseur[indCana],chemin);
 
-    // Envoie de la requète au serveur
-    EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,serveur);
+    // On incrémente
+    indCana++;
+    indCstruct++;
 
-    //Regarde le code HTTP, ex : 200,404,...
-    char* header = RecoieLigne(sockfd);
-    int s_header = strlen(header);
-    char* tmp = malloc(sizeof(char)*(s_header+4));
-
-    strcpy(tmp,header); // On sauvegarde la première ligne de l'en-tête
-    header = strtok(header," "); // On découpe la chaine en délimitant pas des espaces
-    header = strtok(NULL," "); // On récupère la deuxième partie soit le code
-    free(tmp); // On libère tmp
-
-    // On cast le code en int
-    int code = atoi(header);
-    // On réchupère le message erreur
-    char* messerr = strtok(NULL,"");
-
-    // On gère les erreurs ou réussites, ici on ne tiens pas compte précisement de tous les cas possibles
-    if(code >= 200 && code < 400)
-        printf("\n%d , %s\n",code,messerr);
-    else if(code >= 400 && code < 600){
-        printf("\nErreur %d , %s\n",code,messerr);
-        exit(EXIT_FAILURE);
-    }
-
-    // En cas de redirection on recupère l'url
-    if(code == 302)
-    {
-        while(strncmp(tmp,"Location:",9) != 0)
-        {
-            tmp = RecoieLigne(sockfd);
-        }
-        // On récupère l'adresse sans le http://
-        if(strncmp(tmp,"http://",7) == 0)
-        {
-            char* url = tmp + 17;
-            // On récupère le serveur
-            tmp = strtok(url,"/");
-            char* new_serveur = tmp;
-            // On s'occupe du chemin
-            tmp = strtok(NULL,"");
-            char* new_chemin  = tmp;
-
-            // On relance la fonction de base
-            http_get(new_serveur,port,new_chemin,nom_fichier,nb_th_a,nb_th_d);
-
-        } else {
-            // On récupère le chemin sans la page (ex:"./test.php" on le supprime)
-            char* lastslash  = strrchr(chemin,'/');
-            if(lastslash != NULL) *lastslash = '\0';
-            printf("\%s\n",chemin);
-            tmp = tmp + 11; // On enlève le "./"
-            char* new_chemin  = malloc(sizeof(char)*(strlen(tmp)+strlen(chemin)));//Utilise pthread create :)
-            strcpy(new_chemin,chemin);
-            strcat(new_chemin,tmp);
-
-            printf("\%s\n",new_chemin);
-
-            // On relance la fonction de base
-            http_get(serveur,port,new_chemin,nom_fichier,nb_th_a,nb_th_d);
-            free(new_chemin);
-        }
-
-        close(sockfd);
-
-        // Enfin on sort de la fontion
-        exit(0);
-    }
-
-    // RecoieLigne enlève les caractère spéciaux , c'est pourquoi on va attendre une ligne vide
-    // Celle qui sépare l'en-tête du reste du corps
-    while( strcmp(tmp,"") != 0)
-    {
-        if(strcmp(tmp,"Transfer-Encoding: chunked"))
-            chunked = true;
-        tmp = RecoieLigne(sockfd);
-    }
-    if(chunked)
-    {
-        tmp = RecoieLigne(sockfd);
-        chk_bytes = strtol(tmp,NULL,16); // on parse l'hexa en octets
-    }
-    // Fin du traitement de l'en-tête \\
 
     //Création des threads
     int j = 0;
@@ -170,26 +96,30 @@ void http_get(const char* serveur, const char* port, const char* chemin, const c
         ++j;
     }
 
-
-    // On ferme la sockfd
-    close(sockfd);
-
 }
 
 void *analyse_page(void *arg)
 {
     (void)arg; //Pour enlever warning
-    int sockfd = CreeSocketClient(g_serveur, g_port) ; // La socket du thread
     int nb_bytes = 0; // Le nombre d'octets reçus pour le chunked
     char *chemin; // Le chemin du fichier contenu dans le tableau
      // Variable qui récupérera la ligne courante
     char *cp_ligne; // Copie de ligne afin de ne pas modifer la ligne d'origine
     char *ligne;
+    // Variable concernant le cas chunked
+    bool chunked = false; // Indiquera si la page est chunked ou pas
+    int  chk_bytes;
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
+    int sockfd = CreeSocketClient(g_serveur, g_port) ; // La socket du thread
     if(sockfd == -1)
         perror("Erreur sur la sockfd");
-EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,g_serveur);
+    // On récupère la page à analyser
+    chemin = accesTableauAnalyse();
+    EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,g_serveur);
+    // On gère les codes HTTP
+    traitementEnTete(sockfd,chemin,&chunked,&chk_bytes);
+
     while(1)  // Boucle infini
     {
         // Envoie de la requète au serveur
@@ -203,43 +133,45 @@ EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,g_serveur);
         /*
          * Avant on faisait ligne = RecoieLigne(sockfd)
          * Avec ca probleme de segmentation quel que soit ce qu'on fait
-         * TOus les recoiesLIgne(sockfd) de cette fonction ont remplacé ligne
+         * Tous les recoiesLIgne(sockfd) de cette fonction ont remplacé ligne
          *
         */
-        cp_ligne = malloc(sizeof(char)*strlen(RecoieLigne(sockfd)));
-
-        strcpy(cp_ligne,RecoieLigne(sockfd));
+        ligne = RecoieLigne(sockfd);
+        nb_bytes = nb_bytes + strlen(ligne);
+        cp_ligne = malloc(sizeof(char)*strlen(ligne));
+        strcpy(cp_ligne,ligne);
         printf(" Ligne : %s\n",cp_ligne);
+        printf("\n%d\n",nb_bytes);
 
-        if (strcmp("</html>",cp_ligne) ==0)
+        if (strstr("</html>",cp_ligne) != NULL)
             break;
 
             //break; //Pour sortir de la boucle
-            /*
-             * Non optimisé : Si sur la ligne il y'a autre chose que </html> c'est pas pris en compte
-            */
 
         // Image
-        if(strstr("<img",cp_ligne) != NULL)
-            rempliTableauxAnalyse("src=",cp_ligne);
+        if(strstr(cp_ligne,"<img") != NULL)
+            rempliTableauxDownload("src=",cp_ligne);
         // Script JS
-        if(strstr("<script",cp_ligne) != NULL)
-            rempliTableauxAnalyse("src=",cp_ligne);
+        if(strstr(cp_ligne,"<script") != NULL)
+            rempliTableauxDownload("src=",cp_ligne);
         // Lien CSS
-        if(strstr("<link",cp_ligne) != NULL)
-            rempliTableauxAnalyse("href=",cp_ligne);
+        if(strstr(cp_ligne,"<link") != NULL){
+            rempliTableauxDownload("href=",cp_ligne);
+        }
         // Lien <a>
-        if(strstr("<a",cp_ligne) != NULL)
-            rempliTableauxAnalyse("href=",cp_ligne);
+        if(strstr(cp_ligne,"<a") != NULL)
+            rempliTableauxDownload("href=",cp_ligne);
+
     // Si on est dans le cas chunked
         if(chunked){
             // Quand on arrive à la taille indiqué par le chunked on stock la prochaine taille
             if(nb_bytes == chk_bytes){
                 //ligne = RecoieLigne(sockfd);
-                chk_bytes = strtol(/*ligne*/RecoieLigne(sockfd),NULL,16); // On parse la taille en hexa en octets
+                chk_bytes = strtol(ligne,NULL,16); // On parse la taille en hexa en octets
                 nb_bytes = 0;
             }
         } // FIn if chunked
+        free(ligne); // On libère la mémoire
     }// FIn while(1
     close(sockfd);
     pthread_exit(NULL);
@@ -254,7 +186,6 @@ void *download_page(void *arg)
     char *nom_fichier; // Le nom du fichier reçu
     char *lastslash;
     int outfd; // Descripteur du nouveau fichier
-printf("\nANALYSEJFIDSO\n");
     // On établit la connexion et on récupère l'en-tête du site \\
     // On ouvre la sockfd et on l'a créé et on l'a test
     if(sockfd == -1)
@@ -262,12 +193,12 @@ printf("\nANALYSEJFIDSO\n");
     while(1){  // Boucle infini
         //Téléchargement des ressources
 
-        //chemin = accesTableauDownload();
-        printf("BUGUGU");
+        chemin = accesTableauDownload();
+
         //Récupérer le fichier,son extension, etc
-        lastslash = malloc(sizeof(char)*strlen(accesTableauDownload()));
+        lastslash = malloc(sizeof(char)*strlen(chemin));
         lastslash = strrchr(chemin,'/');
-        printf("FDP");
+
         nom_fichier = malloc(sizeof(char)*strlen(lastslash));
         strcpy(nom_fichier,lastslash);
         lastslash = '\0';
@@ -286,6 +217,11 @@ printf("\nANALYSEJFIDSO\n");
         // RecoieLigne enlève les caractère spéciaux , c'est pourquoi on va attendre une ligne vide
         // Celle qui sépare l'en-tête du reste du corps
         while( strcmp(ligne,"") != 0) {
+            if(strstr("Content-Length: text/html",ligne) != NULL){
+                rempliTableauxAnalyse(chemin);
+                break;
+            }
+            free(ligne);
             ligne = RecoieLigne(sockfd);
         }
 
@@ -302,7 +238,20 @@ printf("\nANALYSEJFIDSO\n");
     pthread_exit(NULL);
 }
 
-void rempliTableauxAnalyse(char *type,char *cp_ligne)
+void rempliTableauxAnalyse(char *chemin){
+
+    // On vérouille le mutex pour que ce thread soit prioritaire sur la ressource
+    pthread_mutex_lock(&t_mutex);
+
+    analyseur[indCana] = malloc(sizeof(char)*strlen(chemin));
+    strcpy(downloadeur[indCana],chemin);
+
+    // Enfin on laisse l'accès à la ressource
+    pthread_mutex_unlock(&t_mutex);
+
+}
+
+void rempliTableauxDownload(char *type,char *cp_ligne)
 {
     char *chemin; // Chemin de fichier
     char url_fichier[255]; // Variable permettant de mettre l'url du fichier dans le tableau
@@ -310,12 +259,14 @@ void rempliTableauxAnalyse(char *type,char *cp_ligne)
 
     // On vérouille le mutex pour que ce thread soit prioritaire sur la ressource
     pthread_mutex_lock(&t_mutex);
-    chemin = strstr(type,cp_ligne);
-    lastguimet = strrchr(chemin, '"');
+
+    chemin = strstr(cp_ligne,type);
+    lastguimet = strrchr(chemin,'"');
+
     if(chemin != NULL){
         if(lastguimet != NULL)
         {
-            lastguimet = '\0'; // On suppirme tous ce qui est après la guillemet
+            lastguimet = '\0'; // On supprime tous ce qui est après la guillemet
             chemin = chemin + strlen(type) + 1; // On supprime le src=",etc
             // On alloue l'espace pour garder les chemins en mémoire et on copie
             f.repertoire[indCstruct] = malloc(sizeof(char)*strlen(chemin));
@@ -326,19 +277,20 @@ void rempliTableauxAnalyse(char *type,char *cp_ligne)
             f.url[indCstruct] = malloc(sizeof(char)*strlen(url_fichier));
             strcpy(f.url[indCstruct],url_fichier);
             f.t_analyze[indCstruct] = false;
-            f.t_download[indCstruct] = true;
+            f.t_download[indCstruct] = false;
 
             // On s'occupe maintenant de l'analyseur
-            analyseur[indCana] = malloc(sizeof(char)*strlen(chemin));
-            strcpy(analyseur[indCana],chemin);
+            downloadeur[indCdown] = malloc(sizeof(char)*strlen(chemin));
+            strcpy(downloadeur[indCdown],chemin);
+            printf("\nTest\n");
 
             // On incrémente
-            indCana++;
+            indCdown++;
             indCstruct++;
         }
     }
 
-    // Enfin on laisse l'accès à la reschemin
+    // Enfin on laisse l'accès à la ressource
     pthread_mutex_unlock(&t_mutex);
 
 }
@@ -393,6 +345,129 @@ void creerRepertoire(char* chemin){
         }
         repertoire = strtok(chemin,"/");
     }
+}
+
+void traitementEnTete(int sockfd, char *chemin, bool *chunked, int *chk_bytes){
+
+//Regarde le code HTTP, ex : 200,404,...
+    char* header = RecoieLigne(sockfd);
+    int s_header = strlen(header);
+    char* tmp = malloc(sizeof(char)*(s_header+4));
+
+    strcpy(tmp,header); // On sauvegarde la première ligne de l'en-tête
+    free(header); // On libère la première ligne de code
+    header = strtok(tmp," "); // On découpe la chaine en délimitant pas des espaces
+    header = strtok(NULL," "); // On récupère la deuxième partie soit le code
+
+    // On cast le code en int
+    int code = atoi(header);
+    // On réchupère le message erreur
+    char* messerr = strtok(NULL,"");
+
+    // On gère les erreurs ou réussites, ici on ne tiens pas compte précisement de tous les cas possibles
+    if(code >= 200 && code < 400)
+        printf("\n%d , %s\n",code,messerr);
+    else if(code >= 400 && code < 600){
+        printf("\nErreur %d , %s\n",code,messerr);
+        exit(EXIT_FAILURE);
+    }
+
+    // En cas de redirection on recupère l'url
+    if(code == 302){
+        while(strncmp(tmp,"Location:",9) != 0)
+        {
+            free(tmp); // On libère la ligne précédente
+            tmp = RecoieLigne(sockfd);
+        }
+        // On récupère l'adresse sans le http://
+        if(strncmp(tmp,"http://",7) == 0)
+        {
+            char* url = tmp + 17;
+            // On récupère le serveur
+            tmp = strtok(url,"/");
+            char* new_serveur = tmp;
+            // On s'occupe du chemin
+            tmp = strtok(NULL,"");
+            char* new_chemin  = tmp;
+
+            pthread_mutex_lock(&t_mutex);
+            char url_fichier[255]; // Variable permettant de mettre l'url du fichier dans le tableau
+            // On alloue l'espace pour garder les chemins en mémoire et on copie
+            f.repertoire[indCstruct] = malloc(sizeof(char)*strlen(new_chemin));
+            strcpy(f.repertoire[indCstruct],new_chemin);
+            strcpy(url_fichier,new_serveur); // On copie l'url de base
+            strcat(url_fichier,"/"); // Ajout du slash
+            strcat(url_fichier,new_chemin); // Puis du chemin vers le fichier
+            f.url[indCstruct] = malloc(sizeof(char)*strlen(url_fichier));
+            strcpy(f.url[indCstruct],url_fichier);
+            f.t_analyze[indCstruct] = false;
+            f.t_download[indCstruct] = false;
+
+            // On s'occupe maintenant de l'analyseur
+            analyseur[indCana] = malloc(sizeof(char)*strlen(new_chemin));
+            strcpy(analyseur[indCana],new_chemin);
+
+            // On incrémente
+            indCana++;
+            indCstruct++;
+            pthread_mutex_unlock(&t_mutex);
+
+        } else {
+            // On récupère le chemin sans la page (ex:"./test.php" on le supprime)
+            char* lastslash  = strrchr(chemin,'/');
+            if(lastslash != NULL) *lastslash = '\0';
+            printf("\%s\n",chemin);
+            tmp = tmp + 11; // On enlève le "./"
+            char* new_chemin  = malloc(sizeof(char)*(strlen(tmp)+strlen(chemin)));//Utilise pthread create :)
+            strcpy(new_chemin,chemin);
+            strcat(new_chemin,tmp);
+
+            printf("\%s\n",new_chemin);
+
+            pthread_mutex_lock(&t_mutex);
+            char url_fichier[255]; // Variable permettant de mettre l'url du fichier dans le tableau
+            // On alloue l'espace pour garder les chemins en mémoire et on copie
+            f.repertoire[indCstruct] = malloc(sizeof(char)*strlen(new_chemin));
+            strcpy(f.repertoire[indCstruct],new_chemin);
+            strcpy(url_fichier,g_serveur); // On copie l'url de base
+            strcat(url_fichier,"/"); // Ajout du slash
+            strcat(url_fichier,new_chemin); // Puis du chemin vers le fichier
+            f.url[indCstruct] = malloc(sizeof(char)*strlen(url_fichier));
+            strcpy(f.url[indCstruct],url_fichier);
+            f.t_analyze[indCstruct] = false;
+            f.t_download[indCstruct] = false;
+
+            // On s'occupe maintenant de l'analyseur
+            analyseur[indCana] = malloc(sizeof(char)*strlen(new_chemin));
+            strcpy(analyseur[indCana],new_chemin);
+
+            // On incrémente
+            indCana++;
+            indCstruct++;
+            pthread_mutex_unlock(&t_mutex);
+
+            free(new_chemin);
+        }
+    }
+    printf("\nTest en tete :\n");
+    // RecoieLigne enlève les caractère spéciaux , c'est pourquoi on va attendre une ligne vide
+    // Celle qui sépare l'en-tête du reste du corps
+    while( strcmp(tmp,"") != 0)
+    {
+        if(strcmp(tmp,"Transfer-Encoding: chunked"))
+            *chunked = true;
+        free(tmp);
+        tmp = RecoieLigne(sockfd);
+    }
+    if(*chunked)
+    {
+        tmp = RecoieLigne(sockfd);
+        *chk_bytes = strtol(tmp,NULL,16); // on parse l'hexa en octets
+        free(tmp);
+    }
+    // Fin du traitement de l'en-tête \\
+
+
 }
 
 

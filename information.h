@@ -56,10 +56,15 @@ void *download_page(void *arg);
 
 /**
  * Fonction qui rempli la structure ansi que le tableau analyseur
- * @param *type
- * @param *cp_ligne
+ * @param *chemin
 */
-void rempliTableauxAnalyse(char *type,char *cp_ligne);
+void rempliTableauxAnalyse(char *chemin);
+
+/**
+ * Fonction qui récupère les données de la structure et du tableau download
+ * @return char*
+*/
+void rempliTableauxDownload(char *type,char *cp_ligne);
 
 /**
  * Fonction qui récupère les données de la structure et du tableau download
@@ -78,3 +83,13 @@ char* accesTableauAnalyse();
  * @param chemin
 */
 void creerRepertoire(char* chemin);
+
+/**
+ * Fonction qui récupère le code HTTP et le gère
+ * @param sockfd
+ * @param chemin
+ * @param chunked
+ * @param chk_bytes
+
+*/
+void traitementEnTete(int sockfd, char *chemin, bool *chunked,int *chk_bytes);

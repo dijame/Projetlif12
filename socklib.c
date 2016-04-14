@@ -290,7 +290,7 @@ char *RecoieLigne(int sock)
     int taillereserve = TAILLE_BUFF;
     int aretirer;
 
-    // le restultat est une chaine vide au départ
+    // le resultat est une chaine vide au départ
     char *result = (char*)malloc(taillereserve*sizeof(char));
     result[0] = '\0';
 
