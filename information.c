@@ -140,8 +140,6 @@ void *analyse_page(void *arg)
         nb_bytes = nb_bytes + strlen(ligne);
         cp_ligne = malloc(sizeof(char)*strlen(ligne));
         strcpy(cp_ligne,ligne);
-        printf(" Ligne : %s\n",cp_ligne);
-        printf("\n%d\n",nb_bytes);
 
         if (strstr("</html>",cp_ligne) != NULL)
             break;
@@ -150,17 +148,17 @@ void *analyse_page(void *arg)
 
         // Image
         if(strstr(cp_ligne,"<img") != NULL)
-            rempliTableauxDownload("src=",cp_ligne);
+            rempliTableauxDownload("src=",cp_ligne,chemin);
         // Script JS
         if(strstr(cp_ligne,"<script") != NULL)
-            rempliTableauxDownload("src=",cp_ligne);
+            rempliTableauxDownload("src=",cp_ligne,chemin);
         // Lien CSS
         if(strstr(cp_ligne,"<link") != NULL){
-            rempliTableauxDownload("href=",cp_ligne);
+            rempliTableauxDownload("href=",cp_ligne,chemin);
         }
         // Lien <a>
         if(strstr(cp_ligne,"<a") != NULL)
-            rempliTableauxDownload("href=",cp_ligne);
+            rempliTableauxDownload("href=",cp_ligne,chemin);
 
     // Si on est dans le cas chunked
         if(chunked){
@@ -182,8 +180,10 @@ void *download_page(void *arg)
     (void)arg; //Pour enlever warning
     int sockfd  = CreeSocketClient(g_serveur, g_port) ; // La socket du thread
     char *chemin; // Le chemin du fichier contenu dans le tableau
+    char *tmp;
     char *ligne; // Variable qui récupérera la ligne courante
-    char *nom_fichier; // Le nom du fichier reçu
+    char *chemin_fichier; // Le chemin du fichier reçu
+    char *chemin_repertoire; // Le chemin du fichier reçu
     char *lastslash;
     int outfd; // Descripteur du nouveau fichier
     // On établit la connexion et on récupère l'en-tête du site \\
@@ -193,46 +193,58 @@ void *download_page(void *arg)
     while(1){  // Boucle infini
         //Téléchargement des ressources
 
-        chemin = accesTableauDownload();
+        tmp = accesTableauDownload();
 
-        //Récupérer le fichier,son extension, etc
-        lastslash = malloc(sizeof(char)*strlen(chemin));
-        lastslash = strrchr(chemin,'/');
+        // On cherche à obtenir le chemin en lui rajoutant le dossier de base, soit le nom du serveur
+        chemin = malloc(sizeof(char)*strlen(tmp));
+        strcpy(chemin,tmp);
 
-        nom_fichier = malloc(sizeof(char)*strlen(lastslash));
-        strcpy(nom_fichier,lastslash);
-        lastslash = '\0';
-        // Crééation des répertoires
+        //Récupérer le chemin complet du fichier
+        chemin_fichier = malloc(sizeof(char)*(strlen(tmp)+strlen(g_serveur)+1));
+        strcpy(chemin_fichier,g_serveur);
+        strcat(chemin_fichier,"/");
+        strcat(chemin_fichier,tmp);
+
+        // Création des répertoires
+        chemin_repertoire = malloc(sizeof(char)*strlen(chemin_fichier));
+        strcpy(chemin_repertoire,chemin_fichier);
+        lastslash = strrchr(chemin_repertoire,'/');
+        if(lastslash != NULL) *lastslash = '\0';
+
+        creerRepertoire(chemin_repertoire);
+
 
         // Création du fichier
-        outfd = open(nom_fichier,O_WRONLY | O_CREAT,S_IRWXU);
+        outfd = open(chemin_fichier,O_WRONLY | O_CREAT,S_IRWXU);
         if(outfd == -1) {
             perror("Erreur lors de la création du fichier");
             exit(EXIT_FAILURE);
         }
+        printf("\nChemin : %s\n",chemin);
         // Envoie de la requète au serveur
         EnvoieMessage(sockfd,"GET /%s HTTP/1.1\r\nHost: %s\r\n\r\n",chemin,g_serveur);
-
+        free(tmp);
+        free(chemin);
+        free(chemin_fichier);
+        free(chemin_repertoire);
         // On va retirer l'en-tête
         // RecoieLigne enlève les caractère spéciaux , c'est pourquoi on va attendre une ligne vide
         // Celle qui sépare l'en-tête du reste du corps
+        ligne = RecoieLigne(sockfd);
+
         while( strcmp(ligne,"") != 0) {
-            if(strstr("Content-Length: text/html",ligne) != NULL){
+            printf("\n%s\n",ligne);
+            if(strstr(ligne,"Content-Length: text/html") != NULL){
+                free(ligne);
                 rempliTableauxAnalyse(chemin);
                 break;
             }
             free(ligne);
             ligne = RecoieLigne(sockfd);
         }
-
         // Réception du code source du fichier
-        while( ligne != NULL) {
-            ligne = RecoieLigne(sockfd);
-            if(write(outfd,ligne,strlen(ligne)) != strlen(ligne))
-                perror("\nErreur lors de l'écriture du ficher\n");
-        }
+        RecoieEtSauveDonnees(outfd,sockfd);
 
-            free(nom_fichier);
     } // FIn while(1)
     close(sockfd);
     pthread_exit(NULL);
@@ -251,7 +263,7 @@ void rempliTableauxAnalyse(char *chemin){
 
 }
 
-void rempliTableauxDownload(char *type,char *cp_ligne)
+void rempliTableauxDownload(char *type,char *cp_ligne, char *chemin_src)
 {
     char *chemin; // Chemin de fichier
     char url_fichier[255]; // Variable permettant de mettre l'url du fichier dans le tableau
@@ -261,16 +273,49 @@ void rempliTableauxDownload(char *type,char *cp_ligne)
     pthread_mutex_lock(&t_mutex);
 
     chemin = strstr(cp_ligne,type);
-    lastguimet = strrchr(chemin,'"');
-
     if(chemin != NULL){
+        chemin = chemin + strlen(type) + 1; // On supprime le src=",etc
+        lastguimet = strchr(chemin,'"');
         if(lastguimet != NULL)
         {
-            lastguimet = '\0'; // On supprime tous ce qui est après la guillemet
-            chemin = chemin + strlen(type) + 1; // On supprime le src=",etc
+            *lastguimet = '\0'; // On supprime tous ce qui est après la guillemet
             // On alloue l'espace pour garder les chemins en mémoire et on copie
-            f.repertoire[indCstruct] = malloc(sizeof(char)*strlen(chemin));
-            strcpy(f.repertoire[indCstruct],chemin);
+            // Dans le cas où on doit revenir en arrière
+            if(strncmp(chemin,"../",3) == 0){
+                char *lastslash = strrchr(chemin_src,'/');
+                if(lastslash != NULL) *lastslash = '\0';
+                chemin = chemin + 3;
+                f.repertoire[indCstruct] = malloc(sizeof(char)*(strlen(chemin)+strlen(chemin_src)));
+                strcpy(f.repertoire[indCstruct],chemin_src);
+                strcat(f.repertoire[indCstruct],chemin);
+
+                // On s'occupe maintenant de l'analyseur
+                downloadeur[indCdown] = malloc(sizeof(char)*(strlen(chemin)+strlen(chemin_src)));
+                strcpy(downloadeur[indCdown],chemin_src);
+                strcat(downloadeur[indCdown],chemin);
+            } // Le cas où on prend le lien tel quel et on le reajoute au chemin déjà existant
+            else if(strncmp(chemin,"./",2) == 0) {
+                chemin = chemin + 2;
+                f.repertoire[indCstruct] = malloc(sizeof(char)*(strlen(chemin)+strlen(chemin_src)));
+                strcpy(f.repertoire[indCstruct],chemin_src);
+                strcat(f.repertoire[indCstruct],chemin);
+
+                // On s'occupe maintenant de l'analyseur
+                downloadeur[indCdown] = malloc(sizeof(char)*(strlen(chemin)+strlen(chemin_src)));
+                strcpy(downloadeur[indCdown],chemin_src);
+                strcat(downloadeur[indCdown],chemin);
+            } // Le cas où il n'y a pas de chemin mais juste le nom du fichier par exemple
+            else {
+                f.repertoire[indCstruct] = malloc(sizeof(char)*(strlen(chemin)+strlen(chemin_src)+1));
+                strcpy(f.repertoire[indCstruct],chemin_src);
+                strcat(f.repertoire[indCstruct],chemin);
+
+                // On s'occupe maintenant de l'analyseur
+                downloadeur[indCdown] = malloc(sizeof(char)*(strlen(chemin)+strlen(chemin_src)+1));
+                strcpy(downloadeur[indCdown],chemin_src);
+                strcat(downloadeur[indCdown],chemin);
+            }
+
             strcpy(url_fichier,g_serveur); // On copie l'url de base
             strcat(url_fichier,"/"); // Ajout du slash
             strcat(url_fichier,chemin); // Puis du chemin vers le fichier
@@ -278,11 +323,6 @@ void rempliTableauxDownload(char *type,char *cp_ligne)
             strcpy(f.url[indCstruct],url_fichier);
             f.t_analyze[indCstruct] = false;
             f.t_download[indCstruct] = false;
-
-            // On s'occupe maintenant de l'analyseur
-            downloadeur[indCdown] = malloc(sizeof(char)*strlen(chemin));
-            strcpy(downloadeur[indCdown],chemin);
-            printf("\nTest\n");
 
             // On incrémente
             indCdown++;
@@ -332,19 +372,25 @@ char* accesTableauAnalyse(){
 
 }
 
-void creerRepertoire(char* chemin){
-    char* repertoire = strtok(chemin,"/");
+void creerRepertoire(char *chemin){
+    char *buffer = malloc(sizeof(char)*strlen(chemin));
+    char *repertoire = strtok(chemin,"/");
+    strcpy(buffer,repertoire);
     struct stat st = {0};
     while(repertoire != NULL) {
-        if(stat(repertoire,&st) == -1){
-            if(mkdir(repertoire,0700) == -1){
+        if(stat(buffer,&st) == -1){
+            if(mkdir(buffer,0700) == -1){
                 perror("Erreur création du dossier");
                 break;
             }
-
         }
-        repertoire = strtok(chemin,"/");
+        repertoire = strtok(NULL,"/");
+        if(repertoire != NULL){
+            strcat(buffer,"/");
+            strcat(buffer,repertoire);
+        }
     }
+    free(buffer);
 }
 
 void traitementEnTete(int sockfd, char *chemin, bool *chunked, int *chk_bytes){
@@ -449,7 +495,6 @@ void traitementEnTete(int sockfd, char *chemin, bool *chunked, int *chk_bytes){
             free(new_chemin);
         }
     }
-    printf("\nTest en tete :\n");
     // RecoieLigne enlève les caractère spéciaux , c'est pourquoi on va attendre une ligne vide
     // Celle qui sépare l'en-tête du reste du corps
     while( strcmp(tmp,"") != 0)

@@ -61,10 +61,11 @@ void *download_page(void *arg);
 void rempliTableauxAnalyse(char *chemin);
 
 /**
- * Fonction qui récupère les données de la structure et du tableau download
- * @return char*
+ * Fonction qui rempli la structure ansi que le tableau analyseur
+ * @param *type
+ * @param *cp_ligne
 */
-void rempliTableauxDownload(char *type,char *cp_ligne);
+void rempliTableauxDownload(char *type,char *cp_ligne,char *chemin_src);
 
 /**
  * Fonction qui récupère les données de la structure et du tableau download
@@ -90,6 +91,5 @@ void creerRepertoire(char* chemin);
  * @param chemin
  * @param chunked
  * @param chk_bytes
-
 */
 void traitementEnTete(int sockfd, char *chemin, bool *chunked,int *chk_bytes);
